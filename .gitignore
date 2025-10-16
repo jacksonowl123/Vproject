@@ -1,0 +1,50 @@
+# macOS-specific files
+.DS_Store
+
+# Node modules
+node_modules
+
+# Build output
+dist
+
+# Local env files
+.env
+.env.*
+.env.local
+.env.*.local
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Temporary files and cache
+.cache
+.temp
+
+# Output of npm link
+node_modules/.cache
+
+# Local development server output
+.vite
+*.log
+
+# Coverage reports (e.g., Jest or Cypress)
+coverage
+nyc_output
+
+# Docker files
+docker-compose.override.yml
+
+# Optional: Exclude OS-specific files (Windows)
+Thumbs.db

@@ -1,0 +1,22 @@
+{
+    "compilerOptions": {
+      "target": "ESNext",
+      "module": "ESNext",
+      "strict": true,
+      "jsx": "preserve",
+      "moduleResolution": "Node",
+      "esModuleInterop": true,
+      "allowSyntheticDefaultImports": true,
+      "sourceMap": true,
+      "resolveJsonModule": true,
+      "lib": ["ESNext", "DOM"],
+      "skipLibCheck": true,
+      "baseUrl": ".",
+      "paths": {
+        "@/*": ["src/*"]
+      }
+    },
+    "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
+    "exclude": ["node_modules"]
+  }
+  
