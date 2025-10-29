@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { resolve } from 'path';
+import cp from 'vite-plugin-cp';
 
 // Define custom error type to include code property
 interface ProxyError extends Error {
@@ -8,12 +9,30 @@ interface ProxyError extends Error {
 }
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [
+    vue(),
+    cp(
+    {
+      targets:
+      [
+        {
+          src: 'laravel-api/public/index.html',
+          dest: 'laravel-api/resources/views',
+          rename: 'index.blade.php'
+        }
+      ]
+    })
+  ],
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
     },
     extensions: ['.js', '.ts', '.vue']
+  },
+  build:
+  {
+    emptyOutDir: false,
+    outDir: 'laravel-api/public'
   },
   server: {
     proxy: {

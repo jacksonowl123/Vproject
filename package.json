@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext .js,.ts,.vue",
@@ -38,6 +38,7 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3",
     "vite": "^5.4.9",
+    "vite-plugin-cp": "^6.0.3",
     "vue-tsc": "^2.1.6"
   },
   "eslintConfig": {
