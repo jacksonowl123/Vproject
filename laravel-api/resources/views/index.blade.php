@@ -9,7 +9,7 @@
     />
     <link rel="icon" href="/favicon.ico" />
     <title>Vite</title>
-    <script type="module" crossorigin src="/assets/index-Yyde2GX-.js"></script>
+    <script type="module" crossorigin src="/assets/index-BElH4SXg.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-C5uCJZH2.css">
   </head>
   <body>

@@ -105,7 +105,8 @@ interface Game {
 }
 
 // Laravel API Configuration
-const LARAVEL_API_BASE_URL = 'http://127.0.0.1:8000/api'; // Laravel backend URL
+//const LARAVEL_API_BASE_URL = 'http://127.0.0.1:8000/api'; // Laravel backend URL
+const LARAVEL_API_BASE_URL = 'http://api.lbangdeyi.top/api'; // Laravel backend URL
 // Use current origin for Vite dev server (works for any port)
 const VITE_DEV_SERVER_URL = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5175';
 const API_TIMEOUT = 30000; // 30 seconds
