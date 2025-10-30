@@ -16,9 +16,13 @@ export default defineConfig({
       targets:
       [
         {
-          src: 'laravel-api/public/index.html',
+          src: 'dist/index.html',
           dest: 'laravel-api/resources/views',
           rename: 'index.blade.php'
+        },
+        {
+          src: 'dist/assets',
+          dest: 'laravel-api/public/assets'
         }
       ]
     })
@@ -28,11 +32,6 @@ export default defineConfig({
       '@': resolve(__dirname, './src'),
     },
     extensions: ['.js', '.ts', '.vue']
-  },
-  build:
-  {
-    emptyOutDir: false,
-    outDir: 'laravel-api/public'
   },
   server: {
     proxy: {
