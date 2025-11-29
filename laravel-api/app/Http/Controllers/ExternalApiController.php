@@ -20,6 +20,7 @@ class ExternalApiController extends Controller
         $this->apiBaseUrl = env('EXTERNAL_API_BASE_URL', 'http://api.dewamalaya33.com/api');
         $this->bearerToken = env('EXTERNAL_API_BEARER_TOKEN', '');
         $this->timeout = 30; // 30 seconds timeout
+        // Configurable via EXTERNAL_REGISTER_BASE_URL in .env file
         $this->registerBaseUrl = env('EXTERNAL_REGISTER_BASE_URL', 'https://api.lbangdeyi.top');
     }
 

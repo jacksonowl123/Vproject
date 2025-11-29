@@ -175,10 +175,15 @@ export default defineComponent({
       
       // Add global handler for image loading errors
       // This will prevent console errors when placeholder images fail to load
+      // BUT: Don't interfere with game images - let their local handlers deal with it
       const handleImageError = (e: Event) => {
         if (e.target && e.target instanceof HTMLImageElement) {
           const img = e.target;
-          // Replace with a local fallback image or data URI
+          // Skip game images - let GamePage handle them
+          if (img.src && (img.src.includes('/assets/games/') || img.alt?.includes('game') || img.alt?.match(/Allbet|Microgaming|Pragmatic|Joker|Playtech|Big Gaming|Sexy Baccarat/i))) {
+            return; // Let the local error handler in GamePage deal with it
+          }
+          // Replace with a local fallback image or data URI for other images
           img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNlZWVlZWUiLz4KPHRleHQgeD0iNTAiIHk9IjUwIiBmb250LXNpemU9IjEyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBhbGlnbm1lbnQtYmFzZWxpbmU9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmaWxsPSIjOTk5OTk5Ij5JbWFnZTwvdGV4dD4KPC9zdmc+';
           // Prevent further error handling on this image
           img.onerror = null;

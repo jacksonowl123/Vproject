@@ -62,11 +62,17 @@
           :key="`featured-${game.id}`"
           class="relative group rounded-xl overflow-hidden shadow-md transition transform hover:scale-[1.02]"
         >
-          <img
-            :src="game.image"
-            :alt="game.name"
-            class="w-full h-48 object-cover"
-          />
+          <div class="w-full aspect-[16/9] overflow-hidden bg-gray-100">
+            <img
+              :src="game.image"
+              :alt="game.name"
+              :data-expected-path="game.image"
+              class="w-full h-full object-cover"
+              loading="lazy"
+              @error="handleImageError"
+              @load="() => console.log('✅ Featured image loaded:', game.name, game.image)"
+            />
+          </div>
           <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
             <h3 class="text-white font-bold text-lg mb-2">{{ game.name }}</h3>
             <span class="bg-blue-600 text-white text-xs px-2 py-1 rounded-full inline-block w-fit mb-3">{{ formatCategory(game.category) }}</span>
@@ -121,11 +127,15 @@
           :key="game.id"
           class="group relative rounded-xl overflow-hidden shadow-md transition transform hover:shadow-xl"
         >
-          <div class="h-48 overflow-hidden">
+          <div class="w-full aspect-[2/3] overflow-hidden bg-gray-100">
             <img
               :src="game.image"
               :alt="game.name"
-              class="w-full h-full object-cover transition-transform group-hover:scale-110"
+              :data-expected-path="game.image"
+              class="w-full h-full object-cover object-top transition-transform group-hover:scale-110"
+              loading="lazy"
+              @error="handleImageError"
+              @load="() => console.log('✅ Image loaded:', game.name, game.image)"
             />
           </div>
           <div class="p-4">
@@ -238,9 +248,9 @@ export default defineComponent({
       currentPage.value = 1;
     };
 
-    // Featured games (random selection of 4 games)
+    // Featured games (fixed order - first 8 games)
     const featuredGames = computed(() => {
-      return [...games.value].sort(() => 0.5 - Math.random()).slice(0, 8);
+      return [...games.value].slice(0, 8);
     });
 
     // Filtered games based on category and search
@@ -293,6 +303,53 @@ export default defineComponent({
     function filterCategory(category: string) {
       selectedCategory.value = category;
       currentPage.value = 1; // Reset pagination when changing category
+    }
+
+    // Handle image loading errors
+    function handleImageError(event: Event) {
+      const img = event.target as HTMLImageElement;
+      if (!img) return;
+      
+      const originalSrc = img.src;
+      const expectedPath = img.dataset.expectedPath || 'unknown';
+      
+      console.error('❌ Failed to load game image:', {
+        gameName: img.alt,
+        attemptedPath: originalSrc,
+        expectedPath: expectedPath,
+        origin: window.location.origin,
+        basePath: '/assets/games/'
+      });
+      
+      // Try alternative paths if the first one fails
+      if (originalSrc.includes('/assets/games/')) {
+        // Try with different base URL
+        const filename = originalSrc.split('/').pop();
+        if (filename) {
+          // Try direct path from origin
+          const altPath = `${window.location.origin}/assets/games/${filename}`;
+          console.log('🔄 Trying alternative path:', altPath);
+          
+          const testImg = new Image();
+          testImg.onload = () => {
+            console.log('✅ Alternative path worked!');
+            img.src = altPath;
+            img.onerror = null; // Remove error handler to prevent loop
+          };
+          testImg.onerror = () => {
+            console.error('❌ Alternative path also failed');
+            // Final fallback to placeholder
+            img.src = svgPlaceholder(300, 200, '#111827', '#FFFFFF', 'Game Image');
+            img.onerror = null; // Prevent infinite loop
+          };
+          testImg.src = altPath;
+          return; // Exit early, let the test image handle it
+        }
+      }
+      
+      // Final fallback to placeholder
+      img.src = svgPlaceholder(300, 200, '#111827', '#FFFFFF', 'Game Image');
+      img.onerror = null; // Prevent infinite loop
     }
 
     // Launch game
@@ -411,6 +468,7 @@ export default defineComponent({
       launchGame,
       userBalance,
       handleBalanceUpdate,
+      handleImageError,
       Autoplay,
       Pagination,
       bannerPlaceholder: svgPlaceholder(1200, 400, '#111827', '#FFFFFF', 'Game Banner'),
@@ -428,5 +486,45 @@ export default defineComponent({
 .swiper-pagination-bullet-active {
   background: #0066FF !important;
   opacity: 1;
+}
+
+/* Ensure images maintain quality and don't get pixelated */
+img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  image-rendering: auto;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Ensure object-cover fills the container properly */
+.object-cover {
+  object-fit: cover !important;
+  object-position: center;
+}
+
+/* Better positioning for game images - show top portion which usually has important content */
+.object-top {
+  object-position: top center !important;
+}
+
+/* Responsive image containers */
+.aspect-\[16\/9\] {
+  aspect-ratio: 16 / 9;
+}
+
+.aspect-\[4\/3\] {
+  aspect-ratio: 4 / 3;
+}
+
+.aspect-\[2\/3\] {
+  aspect-ratio: 2 / 3;
+}
+
+/* Ensure images scale smoothly on different screen sizes */
+@media (max-width: 640px) {
+  .aspect-\[2\/3\] {
+    aspect-ratio: 2 / 3;
+  }
 }
 </style>

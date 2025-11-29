@@ -105,8 +105,32 @@ interface Game {
 }
 
 // Laravel API Configuration
-//const LARAVEL_API_BASE_URL = 'http://127.0.0.1:8000/api'; // Laravel backend URL
-const LARAVEL_API_BASE_URL = '/api'; // Laravel backend URL
+const DEV_SERVER_PORTS = ['5173', '4173', '3000'];
+const DEFAULT_LARAVEL_PORT = (import.meta as any).env?.VITE_LARAVEL_API_DEV_PORT || '8000';
+
+function resolveLaravelBaseUrl(): string {
+  const envBase = (import.meta as any).env?.VITE_LARAVEL_API_BASE_URL;
+  if (envBase) {
+    return envBase;
+  }
+
+  if (typeof window !== 'undefined') {
+    const { protocol, hostname, port } = window.location;
+
+    // When running via Vite dev server (5173, 4173, 3000), route API calls to Laravel port
+    if (port && DEV_SERVER_PORTS.includes(port)) {
+      return `${protocol}//${hostname}:${DEFAULT_LARAVEL_PORT}/api`;
+    }
+
+    // When frontend is already served by Laravel (same origin), relative /api works
+    return '/api';
+  }
+
+  return '/api';
+}
+
+const LARAVEL_API_BASE_URL = resolveLaravelBaseUrl();
+
 // Use current origin for Vite dev server (works for any port)
 const VITE_DEV_SERVER_URL = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5175';
 const API_TIMEOUT = 30000; // 30 seconds
@@ -588,15 +612,110 @@ export const laravelApi = {
   getGames(): Game[] {
     // Show only games supported by the new launch API (IDs = platformid)
     // Unavailable/App-only platforms are omitted
-    const toImg = (text: string) => svgPlaceholder(300, 200, '#111827', '#FFFFFF', text);
+    // Using actual game images from public/assets/games/
+    const basePath = '/assets/games/';
+    
+    const getGameImage = (category: string, index: number, gameName?: string): string => {
+      // In Vite, files in public/ are served from root
+      // Path should be /assets/games/filename.jpg
+      let filename: string;
+      
+      // Special mapping for specific games
+      if (gameName === 'Pragmatic') {
+        filename = 'Slo-4.jpg';
+      } else if (gameName === 'Microgaming') {
+        filename = 'Slo-7.jpg';
+      } else if (gameName === 'JILI') {
+        filename = 'Slo-5.jpg';
+      } else if (gameName === 'Joker') {
+        // Joker - don't use image, return placeholder
+        return svgPlaceholder(300, 200, '#111827', '#FFFFFF', 'Joker');
+      } else if (gameName === 'Big Gaming') {
+        filename = 'Live-4.jpg';
+      } else if (gameName === 'Sexy Baccarat') {
+        filename = 'Live-2.jpg';
+      } else if (gameName === 'Playtech') {
+        filename = 'Live-3.jpg'; // Use Live-3 for Playtech
+      } else if (gameName === 'Allbet') {
+        filename = 'Live-1.jpg'; // Use Live-1 for Allbet
+      } else if (category === 'casino') {
+        // Use Live images for casino games (Live-1.jpg to Live-5.jpg)
+        const liveIndex = ((index - 1) % 5) + 1;
+        filename = `Live-${liveIndex}.jpg`;
+      } else if (category === 'slots') {
+        // Use Slo images for slots games (Slo-1.jpg to Slo-12.jpg)
+        const sloIndex = ((index - 1) % 12) + 1;
+        filename = `Slo-${sloIndex}.jpg`;
+      } else if (category === 'sports') {
+        // Use Live images for sports games (Live-1.jpg to Live-5.jpg)
+        const liveIndex = ((index - 1) % 5) + 1;
+        filename = `Live-${liveIndex}.jpg`;
+      } else {
+        // Fallback to placeholder for other categories
+        return svgPlaceholder(300, 200, '#111827', '#FFFFFF', category);
+      }
+      
+      // Construct full path - no spaces, so no encoding needed
+      const imagePath = basePath + filename;
+      
+      // Debug logging with full details
+      if (typeof window !== 'undefined') {
+        const fullUrl = window.location.origin + imagePath;
+        console.log(`[Game Image] ${gameName || category} (index ${index}):`, {
+          filename,
+          imagePath,
+          fullUrl,
+          // Test if image exists
+          testUrl: fullUrl
+        });
+        
+        // Preload image to verify it exists
+        const testImg = new Image();
+        testImg.onload = () => {
+          console.log(`✅ Image loaded successfully: ${fullUrl}`);
+        };
+        testImg.onerror = () => {
+          console.error(`❌ Image failed to load: ${fullUrl}`);
+        };
+        testImg.src = fullUrl;
+      }
+      
+      return imagePath;
+    };
+    
+    // Track indices per category for proper image rotation
+    let casinoIndex = 0;
+    let slotsIndex = 0;
+    let sportsIndex = 0;
+    
     return [
-      { id: 1, name: 'Allbet', category: 'casino', image: toImg('Allbet') },
-      { id: 3, name: 'Microgaming', category: 'slots', image: toImg('Microgaming') },
-      { id: 4, name: 'Big Gaming', category: 'casino', image: toImg('Big Gaming') },
-      { id: 5, name: 'Pragmatic', category: 'slots', image: toImg('Pragmatic') },
-      { id: 6, name: 'Playtech', category: 'casino', image: toImg('Playtech') },
-      { id: 8, name: 'Joker', category: 'slots', image: toImg('Joker') },
-      { id: 11, name: 'Sexy Baccarat', category: 'casino', image: toImg('Sexy Baccarat') },
+      // Casino games
+      { id: 1, name: 'Allbet', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Allbet') },
+      { id: 2, name: 'ASIAGAMING', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'ASIAGAMING') },
+      { id: 4, name: 'Big Gaming', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Big Gaming') },
+      { id: 6, name: 'Playtech', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Playtech') },
+      { id: 11, name: 'Sexy Baccarat', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Sexy Baccarat') },
+      { id: 12, name: 'EBET', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'EBET') },
+      { id: 20, name: 'Lion King', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Lion King') },
+      { id: 55, name: 'CMD', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'CMD') },
+      
+      // Slots games
+      { id: 3, name: 'Microgaming', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Microgaming') },
+      { id: 5, name: 'Pragmatic', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Pragmatic') },
+      { id: 7, name: 'Pussy888', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Pussy888') },
+      { id: 8, name: 'Joker', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Joker') },
+      { id: 9, name: 'Mega888', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Mega888') },
+      { id: 10, name: '918Kiss', category: 'slots', image: getGameImage('slots', ++slotsIndex, '918Kiss') },
+      { id: 18, name: 'Spade Gaming', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Spade Gaming') },
+      { id: 19, name: 'JILI', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'JILI') },
+      
+      // Sports games
+      { id: 13, name: 'M8 Sport', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'M8 Sport') },
+      { id: 14, name: 'I1 Sport', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'I1 Sport') },
+      { id: 15, name: 'WS Sport', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'WS Sport') },
+      { id: 16, name: 'BC Sport', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'BC Sport') },
+      { id: 21, name: 'IBC', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'IBC') },
+      { id: 22, name: 'SBO', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'SBO') },
     ];
   },
 
