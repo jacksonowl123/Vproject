@@ -48,45 +48,6 @@
       </div>
     </div>
 
-    <!-- Featured Games Section -->
-    <div class="mb-10" v-if="featuredGames.length > 0">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl md:text-2xl font-bold text-gray-800">Featured Games</h2>
-        <button class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-          View All <i class="fas fa-arrow-right ml-1"></i>
-        </button>
-      </div>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div
-          v-for="game in featuredGames.slice(0, 4)"
-          :key="`featured-${game.id}`"
-          class="relative group rounded-xl overflow-hidden shadow-md transition transform hover:scale-[1.02]"
-        >
-          <div class="w-full aspect-[16/9] overflow-hidden bg-gray-100">
-            <img
-              :src="game.image"
-              :alt="game.name"
-              :data-expected-path="game.image"
-              class="w-full h-full object-cover"
-              loading="lazy"
-              @error="handleImageError"
-              @load="() => console.log('✅ Featured image loaded:', game.name, game.image)"
-            />
-          </div>
-          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
-            <h3 class="text-white font-bold text-lg mb-2">{{ game.name }}</h3>
-            <span class="bg-blue-600 text-white text-xs px-2 py-1 rounded-full inline-block w-fit mb-3">{{ formatCategory(game.category) }}</span>
-            <button 
-              @click="launchGame(game.id)"
-              class="bg-[#0066FF] hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition w-full"
-            >
-              Play Now
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Game Categories -->
     <div class="mb-8">
       <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4">Game Categories</h2>
@@ -247,11 +208,6 @@ export default defineComponent({
       searchQuery.value = '';
       currentPage.value = 1;
     };
-
-    // Featured games (fixed order - first 8 games)
-    const featuredGames = computed(() => {
-      return [...games.value].slice(0, 8);
-    });
 
     // Filtered games based on category and search
     const filteredGames = computed(() => {
@@ -456,7 +412,6 @@ export default defineComponent({
       games,
       filteredGames,
       displayedGames,
-      featuredGames,
       categoryCount,
       searchQuery,
       currentPage,
