@@ -1,30 +1,22 @@
 <template>
   <div class="max-w-7xl mx-auto">
     <!-- Hero Banner Carousel -->
-    <div class="relative mb-8 rounded-xl overflow-hidden shadow-lg">
+    <div class="relative mb-8 w-full rounded-xl overflow-hidden shadow-lg">
       <swiper
         :modules="[Autoplay, Pagination]"
         :slides-per-view="1"
         :loop="true"
         :autoplay="{ delay: 5000, disableOnInteraction: false }"
         :pagination="{ clickable: true }"
-        class="h-[300px] md:h-[400px]"
+        class="banner-swiper h-[300px] md:h-[400px] w-full"
       >
-        <swiper-slide v-for="i in 4" :key="i" class="relative">
+        <swiper-slide v-for="(banner, index) in banners" :key="index" class="banner-slide">
           <img
-            class="w-full h-full object-cover"
-            :src="bannerPlaceholder"
-            :alt="`Banner ${i}`"
+            class="banner-image w-full h-full object-cover"
+            :src="banner"
+            :alt="`Banner ${index + 1}`"
+            loading="lazy"
           />
-          <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end">
-            <div class="p-6 text-white">
-              <h2 class="text-2xl md:text-3xl font-bold mb-2">Special Promotion {{ i }}</h2>
-              <p class="text-sm md:text-base mb-4">Exclusive games and bonuses available now!</p>
-              <button class="bg-[#0066FF] hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition">
-                Learn More
-              </button>
-            </div>
-          </div>
         </swiper-slide>
       </swiper>
     </div>
@@ -42,7 +34,7 @@
           type="text" 
           v-model="searchQuery" 
           placeholder="Search for games..." 
-          class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="w-full pl-10 pr-4 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
         />
         <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
       </div>
@@ -402,6 +394,14 @@ export default defineComponent({
       currentPage.value = 1;
     });
 
+    // Banner images from Banner 1200x400 folder
+    const banners = computed(() => {
+      const bannerCount = 8; // We have 8 banner images (1.jpg to 8.jpg)
+      return Array.from({ length: bannerCount }, (_, i) => {
+        return `/assets/banners/${i + 1}.jpg`;
+      });
+    });
+
     onMounted(() => {
       fetchUserBalance();
     });
@@ -426,13 +426,37 @@ export default defineComponent({
       handleImageError,
       Autoplay,
       Pagination,
-      bannerPlaceholder: svgPlaceholder(1200, 400, '#111827', '#FFFFFF', 'Game Banner'),
+      banners,
     };
   },
 });
 </script>
 
 <style scoped>
+/* Banner carousel styles */
+.banner-swiper {
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.banner-slide {
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.banner-image {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
 .swiper-pagination-bullet {
   background: white !important;
   opacity: 0.7;

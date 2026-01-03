@@ -29,7 +29,7 @@
               type="text" 
               v-model="username" 
               placeholder="UID*"
-              class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              class="w-full px-4 py-3 bg-white text-gray-900 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder-gray-400"
               required
             />
           </div>
@@ -39,7 +39,7 @@
               type="password" 
               v-model="password" 
               placeholder="Password"
-              class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              class="w-full px-4 py-3 bg-white text-gray-900 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder-gray-400"
               required
             />
           </div>
@@ -85,18 +85,13 @@
       </div>
     </div>
 
-    <!-- Right side - Promo Image -->
+    <!-- Right side - Promo Section -->
     <div class="w-1/2 bg-[#0066FF]">
       <div class="h-full flex items-center justify-center p-8">
         <div class="text-center text-white">
-          <h2 class="text-4xl font-bold mb-4">WELCOME BONUS</h2>
-          <h3 class="text-6xl font-bold mb-4">UP TO 388%</h3>
-          <p class="text-2xl">Register Now!</p>
-          <img 
-            :src="dummyImages.promoCharacter"
-            alt="Promotion" 
-            class="max-w-full mt-8"
-          >
+          <h2 class="text-4xl font-bold mb-4">JOIN US TODAY</h2>
+          <h3 class="text-5xl font-bold mb-4">Start Your Journey</h3>
+          <p class="text-xl">Experience premium gaming and exclusive features</p>
         </div>
       </div>
     </div>
@@ -144,7 +139,7 @@
             type="text" 
             v-model="username" 
             placeholder="UID*"
-            class="w-full px-4 py-3 rounded-lg border border-gray-300"
+            class="w-full px-4 py-3 bg-white text-gray-900 rounded-lg border border-gray-300 placeholder-gray-400"
           />
         </div>
 
@@ -153,7 +148,7 @@
             type="password" 
             v-model="password" 
             placeholder="Password"
-            class="w-full px-4 py-3 rounded-lg border border-gray-300"
+            class="w-full px-4 py-3 bg-white text-gray-900 rounded-lg border border-gray-300 placeholder-gray-400"
           />
         </div>
 

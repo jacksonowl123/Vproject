@@ -618,44 +618,49 @@ export const laravelApi = {
     const getGameImage = (category: string, index: number, gameName?: string): string => {
       // In Vite, files in public/ are served from root
       // Path should be /assets/games/filename.jpg
+      // Using new images from Game-FN-2 folder
       let filename: string;
       
-      // Special mapping for specific games
-      if (gameName === 'Pragmatic') {
-        filename = 'Slo-4.jpg';
-      } else if (gameName === 'Microgaming') {
-        filename = 'Slo-7.jpg';
-      } else if (gameName === 'JILI') {
-        filename = 'Slo-5.jpg';
-      } else if (gameName === 'Joker') {
-        // Joker - don't use image, return placeholder
-        return svgPlaceholder(300, 200, '#111827', '#FFFFFF', 'Joker');
-      } else if (gameName === 'Big Gaming') {
-        filename = 'Live-4.jpg';
-      } else if (gameName === 'Sexy Baccarat') {
-        filename = 'Live-2.jpg';
-      } else if (gameName === 'Playtech') {
-        filename = 'Live-3.jpg'; // Use Live-3 for Playtech
-      } else if (gameName === 'Allbet') {
-        filename = 'Live-1.jpg'; // Use Live-1 for Allbet
-      } else if (category === 'casino') {
-        // Use Live images for casino games (Live-1.jpg to Live-5.jpg)
-        const liveIndex = ((index - 1) % 5) + 1;
-        filename = `Live-${liveIndex}.jpg`;
-      } else if (category === 'slots') {
-        // Use Slo images for slots games (Slo-1.jpg to Slo-12.jpg)
-        const sloIndex = ((index - 1) % 12) + 1;
-        filename = `Slo-${sloIndex}.jpg`;
-      } else if (category === 'sports') {
-        // Use Live images for sports games (Live-1.jpg to Live-5.jpg)
-        const liveIndex = ((index - 1) % 5) + 1;
-        filename = `Live-${liveIndex}.jpg`;
+      // Game name to image filename mapping (from Game-FN-2 folder)
+      const gameImageMap: Record<string, string> = {
+        // Casino games
+        'Allbet': 'AB.jpg',
+        'ASIAGAMING': 'AG.jpg',
+        'Big Gaming': 'BG.jpg',
+        'Playtech': 'PT.jpg',
+        'Sexy Baccarat': 'Sexy.jpg',
+        'EBET': 'EBET.jpg',
+        'Lion King': 'LK.jpg',
+        'CMD': 'CMD.jpg',
+        
+        // Slots games
+        'Microgaming': 'Microslot.jpg',
+        'Pragmatic': 'PP.jpg',
+        'Pussy888': 'pussy.jpg',
+        'Joker': 'joker.jpg',
+        'Mega888': 'mega.jpg',
+        '918Kiss': '918.jpg',
+        'Spade Gaming': 'SG.jpg',
+        'JILI': 'Jili.jpg',
+        
+        // Sports games
+        'M8 Sport': 'm8.jpg',
+        'I1 Sport': 'L1.jpg',
+        'WS Sport': 'ws.jpg',
+        'BC Sport': 'BC.jpg',
+        'IBC': 'IBC.jpg',
+        'SBO': 'SBO.jpg',
+      };
+      
+      // Check if we have a specific mapping for this game
+      if (gameName && gameImageMap[gameName]) {
+        filename = gameImageMap[gameName];
       } else {
-        // Fallback to placeholder for other categories
-        return svgPlaceholder(300, 200, '#111827', '#FFFFFF', category);
+        // Fallback to placeholder if no mapping found
+        return svgPlaceholder(300, 200, '#111827', '#FFFFFF', gameName || category);
       }
       
-      // Construct full path - no spaces, so no encoding needed
+      // Construct full path
       const imagePath = basePath + filename;
       
       // Debug logging with full details
@@ -665,8 +670,6 @@ export const laravelApi = {
           filename,
           imagePath,
           fullUrl,
-          // Test if image exists
-          testUrl: fullUrl
         });
         
         // Preload image to verify it exists
@@ -695,9 +698,7 @@ export const laravelApi = {
       { id: 4, name: 'Big Gaming', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Big Gaming') },
       { id: 6, name: 'Playtech', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Playtech') },
       { id: 11, name: 'Sexy Baccarat', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Sexy Baccarat') },
-      { id: 12, name: 'EBET', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'EBET') },
       { id: 20, name: 'Lion King', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Lion King') },
-      { id: 55, name: 'CMD', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'CMD') },
       
       // Slots games
       { id: 3, name: 'Microgaming', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Microgaming') },
@@ -716,6 +717,8 @@ export const laravelApi = {
       { id: 16, name: 'BC Sport', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'BC Sport') },
       { id: 21, name: 'IBC', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'IBC') },
       { id: 22, name: 'SBO', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'SBO') },
+      { id: 12, name: 'EBET', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'EBET') },
+      { id: 55, name: 'CMD', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'CMD') },
     ];
   },
 
