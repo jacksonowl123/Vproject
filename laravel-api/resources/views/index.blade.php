@@ -9,8 +9,8 @@
     />
     <link rel="icon" href="/favicon.ico" />
     <title>Vite</title>
-    <script type="module" crossorigin src="/assets/index-CuMAB8C2.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-Cvh9JVVj.css">
+    <script type="module" crossorigin src="/assets/index-BLzTC-xk.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CLhHdD9F.css">
   </head>
   <body>
     <div id="app"></div>
