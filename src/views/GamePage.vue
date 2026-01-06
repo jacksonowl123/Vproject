@@ -340,15 +340,17 @@ export default defineComponent({
 
         const launchUrl = (response as any)?.url || (response as any)?.launch?.Url;
         if (launchUrl) {
-          // Open game in new window with specific features
-          const gameWindow = window.open(
-            launchUrl,
-            '_blank',
-            'toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=1024,height=768'
-          );
+          // Open game in a new tab (not a popup window)
+          // Using '_blank' without window features opens a new tab instead of a popup
+          const gameWindow = window.open(launchUrl, '_blank');
           
-          // Focus the new window
-          if (gameWindow) {
+          // Check if new tab was blocked
+          if (!gameWindow || gameWindow.closed || typeof gameWindow.closed === 'undefined') {
+            // New tab blocked, fallback to same window navigation
+            console.warn('New tab blocked, opening in same window');
+            window.location.href = launchUrl;
+          } else {
+            // Focus the new tab
             gameWindow.focus();
           }
         } else {
@@ -356,6 +358,7 @@ export default defineComponent({
         }
       } catch (error: any) {
         console.error('Error launching game:', error);
+        Swal.close(); // Make sure to close loading dialog on error
         Swal.fire({
           icon: 'error',
           title: 'Failed to Launch Game',
