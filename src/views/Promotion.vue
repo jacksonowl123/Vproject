@@ -1,34 +1,57 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 py-6">
-    <!-- Hero Banner Section -->
-    <div class="relative rounded-xl overflow-hidden shadow-lg mb-10">
-      <div class="w-full h-64 md:h-80 bg-gradient-to-r from-blue-700 to-indigo-900">
-        <img 
-          class="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-60" 
-          :src="heroPlaceholder" 
-          alt="Promotions Banner" 
-        />
-        <div class="relative h-full flex flex-col items-center justify-center px-4 text-center">
-          <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 drop-shadow-lg">Special Promotions</h1>
-          <p class="text-lg md:text-xl text-white max-w-2xl opacity-90 mb-6">
-            Discover our latest promotions and offers designed to maximize your experience and rewards.
-          </p>
-          <div class="flex flex-wrap gap-3 justify-center">
-            <button 
-              v-for="category in promotionCategories" 
-              :key="category"
-              @click="selectedCategory = category === selectedCategory ? 'all' : category"
-              :class="[
-                'px-5 py-2 rounded-full transition-all', 
-                selectedCategory === category 
-                  ? 'bg-white text-blue-700 font-medium' 
-                  : 'bg-white/20 text-white hover:bg-white/30'
-              ]"
-            >
-              {{ formatCategory(category) }}
-            </button>
-          </div>
-        </div>
+    <!-- Hero Banner Carousel -->
+    <div class="relative mb-10 w-full rounded-xl overflow-hidden shadow-lg">
+      <swiper
+        :modules="[Autoplay, Pagination]"
+        :slides-per-view="1"
+        :loop="true"
+        :autoplay="{ delay: 5000, disableOnInteraction: false }"
+        :pagination="{ clickable: true }"
+        class="banner-swiper h-[300px] md:h-[400px] w-full"
+      >
+        <swiper-slide v-for="(banner, index) in banners" :key="index" class="banner-slide">
+          <img
+            class="banner-image w-full h-full object-cover"
+            :src="banner"
+            :alt="`Promotion Banner ${index + 1}`"
+            loading="lazy"
+          />
+        </swiper-slide>
+      </swiper>
+    </div>
+
+    <!-- Category Filter Section -->
+    <div class="mb-6">
+      <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-3">Promotion Categories</h2>
+      <div class="flex flex-wrap gap-2 mb-4">
+        <button
+          @click="selectedCategory = 'all'"
+          :class="[
+            'rounded-full px-6 py-2 font-medium transition',
+            selectedCategory === 'all' 
+              ? 'bg-[#0066FF] text-white' 
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          ]"
+        >
+          All Promotions
+        </button>
+        <button
+          v-for="category in promotionCategories"
+          :key="category"
+          @click="selectedCategory = category === selectedCategory ? 'all' : category"
+          :class="[
+            'rounded-full px-6 py-2 font-medium transition flex items-center',
+            selectedCategory === category 
+              ? 'bg-[#0066FF] text-white' 
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          ]"
+        >
+          {{ formatCategory(category) }}
+          <span class="ml-2 bg-white bg-opacity-20 text-xs px-2 py-0.5 rounded-full">
+            {{ getCategoryCount(category) }}
+          </span>
+        </button>
       </div>
     </div>
 
@@ -56,31 +79,35 @@
     <!-- Content when data is loaded -->
     <div v-else>
       <!-- Featured Promotion (if any) -->
-      <div v-if="featuredPromotion" class="mb-12">
-        <h2 class="text-2xl font-bold text-gray-800 mb-6">Featured Promotion</h2>
-        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl overflow-hidden shadow-lg">
-          <div class="flex flex-col md:flex-row">
-            <div class="md:w-1/2">
+      <div v-if="featuredPromotion" class="mb-6">
+        <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-3">Featured Promotion</h2>
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg overflow-hidden shadow-lg">
+          <div class="flex flex-col md:flex-row featured-promotion-wrapper">
+            <div 
+              class="featured-image-container md:w-1/2"
+              @click="showPromotionDetails(featuredPromotion)"
+            >
               <img 
-                :src="featuredPromotion.image || cardPlaceholder"
+                :src="featuredPromotion.image || `/assets/banners/1.jpg`"
                 :alt="featuredPromotion.title"
-                class="w-full h-48 md:h-64 object-cover rounded-lg"
+                class="featured-promotion-image"
+                loading="lazy"
               />
             </div>
-            <div class="p-6 md:w-1/2 flex flex-col justify-center">
-              <div class="mb-2">
-                <span class="bg-blue-600 text-white text-xs px-3 py-1 rounded-full">Featured</span>
-                <span class="bg-green-500 text-white text-xs px-3 py-1 rounded-full ml-2">Limited Time</span>
+            <div class="p-4 md:w-1/2 flex flex-col justify-center">
+              <div class="mb-1.5">
+                <span class="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">Featured</span>
+                <span class="bg-green-500 text-white text-xs px-2 py-0.5 rounded-full ml-2">Limited Time</span>
               </div>
-              <h3 class="text-2xl font-bold text-gray-800 mb-3">{{ featuredPromotion.title }}</h3>
-              <p class="text-gray-600 mb-4">{{ featuredPromotion.description }}</p>
-              <div class="flex items-center text-sm text-gray-500 mb-4">
-                <i class="far fa-calendar-alt mr-2"></i> 
-                <span>Valid until: {{ formatDate(featuredPromotion.endDate) }}</span>
+              <h3 class="text-lg md:text-xl font-bold text-gray-800 mb-1.5">{{ featuredPromotion.title }}</h3>
+              <p class="text-gray-600 text-xs mb-2 leading-relaxed">{{ featuredPromotion.description }}</p>
+              <div class="flex items-center text-xs text-gray-500 mb-2">
+                <i class="far fa-calendar-alt mr-1.5"></i> 
+                <span>Valid: {{ formatDate(featuredPromotion.endDate) }}</span>
               </div>
               <button 
                 @click="showPromotionDetails(featuredPromotion)" 
-                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition self-start"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg transition self-start text-xs"
               >
                 View Details
               </button>
@@ -90,7 +117,7 @@
       </div>
 
       <!-- Search and Filter Section -->
-      <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+      <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
         <h2 class="text-2xl font-bold text-gray-800">All Promotions</h2>
         <div class="relative w-full md:w-80">
           <input 
@@ -104,35 +131,37 @@
       </div>
 
       <!-- Promotions Grid -->
-      <div v-if="filteredPromotions.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+      <div v-if="filteredPromotions.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
         <div 
           v-for="promotion in filteredPromotions" 
           :key="promotion.id"
-          class="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition group"
+          class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition group flex flex-col"
         >
-          <div class="relative h-48 overflow-hidden">
+          <div class="relative w-full aspect-[3/1] overflow-hidden" style="line-height: 0; font-size: 0; margin: 0; padding: 0;">
             <img 
-              :src="promotion.image || cardPlaceholder"
+              :src="promotion.image || `/assets/banners/${((promotion.id - 1) % 8) + 1}.jpg`"
               :alt="promotion.title"
-              class="w-full h-40 object-cover rounded-md"
+              class="promotion-card-image"
+              style="display: block; margin: 0; padding: 0; width: 100%; height: 100%; object-fit: fill; line-height: 0; vertical-align: top;"
+              loading="lazy"
             />
-            <div class="absolute top-0 right-0 bg-blue-600 text-white text-xs px-3 py-1 m-2 rounded-full">
+            <div class="absolute top-0 right-0 bg-blue-600 text-white text-xs px-2 py-0.5 m-1.5 rounded-full">
               {{ formatCategory(promotion.category) }}
             </div>
           </div>
-          <div class="p-5">
-            <h3 class="font-bold text-xl mb-2 text-gray-800">{{ promotion.title }}</h3>
-            <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ promotion.description }}</p>
-            <div class="flex items-center justify-between">
+          <div class="p-3 flex-1 flex flex-col">
+            <h3 class="font-bold text-base mb-1 text-gray-800">{{ promotion.title }}</h3>
+            <p class="text-gray-600 text-xs mb-2 line-clamp-2 flex-1 leading-relaxed">{{ promotion.description }}</p>
+            <div class="flex items-center justify-between mt-auto pt-2 border-t border-gray-100">
               <div class="text-xs text-gray-500">
                 <i class="far fa-calendar-alt mr-1"></i> 
-                Valid until: {{ formatDate(promotion.endDate) }}
+                <span class="hidden sm:inline">Valid: </span>{{ formatDate(promotion.endDate) }}
               </div>
               <button 
                 @click="showPromotionDetails(promotion)" 
-                class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                class="text-blue-600 hover:text-blue-800 text-xs font-medium"
               >
-                View Details <i class="fas fa-chevron-right ml-1"></i>
+                View <i class="fas fa-chevron-right ml-0.5 text-xs"></i>
               </button>
             </div>
           </div>
@@ -162,11 +191,12 @@
       @click.self="selectedPromotion = null"
     >
       <div class="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-        <div class="relative">
+        <div class="relative w-full aspect-[3/1] overflow-hidden">
           <img 
-            :src="selectedPromotion.image || heroPlaceholder"
+            :src="selectedPromotion.image || `/assets/banners/1.jpg`"
             :alt="selectedPromotion.title"
-            class="w-full h-48 md:h-64 object-cover rounded-lg"
+            class="w-full h-full object-cover object-center rounded-lg"
+            loading="lazy"
           />
           <button 
             @click="selectedPromotion = null" 
@@ -247,6 +277,11 @@
 <script lang="ts">
 import { defineComponent, ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { Swiper, SwiperSlide } from 'swiper/vue';
+import 'swiper/css';
+import 'swiper/css/autoplay';
+import 'swiper/css/pagination';
+import { Autoplay, Pagination } from 'swiper/modules';
 import { laravelApi as api } from '@/services/laravelApi';
 import Swal from 'sweetalert2';
 import { authState } from '@/store/auth';
@@ -271,6 +306,10 @@ interface Promotion {
 
 export default defineComponent({
   name: 'PromotionPage',
+  components: {
+    Swiper,
+    SwiperSlide,
+  },
   setup() {
     const router = useRouter();
     const loading = ref(true);
@@ -280,13 +319,21 @@ export default defineComponent({
     const selectedCategory = ref('all');
     const searchQuery = ref('');
 
+    // Banner images from Banner 1200x400 folder
+    const banners = computed(() => {
+      const bannerCount = 8; // We have 8 banner images (1.jpg to 8.jpg)
+      return Array.from({ length: bannerCount }, (_, i) => {
+        return `/assets/banners/${i + 1}.jpg`;
+      });
+    });
+
     // Mock promotions for development - will be replaced with API data
     const mockPromotions: Promotion[] = [
       {
         id: 1,
         title: 'Welcome Bonus 100%',
         description: 'Get a 100% bonus on your first deposit up to MYR 388. Start your gaming journey with twice the funds!',
-        image: '',
+        image: '/assets/banners/1.jpg',
         category: 'welcome',
         featured: true,
         startDate: '2023-01-01',
@@ -301,6 +348,7 @@ export default defineComponent({
         id: 2,
         title: 'Weekend Reload 50%',
         description: 'Every weekend, reload your account with a 50% bonus up to MYR 200. Play more on weekends!',
+        image: '/assets/banners/2.jpg',
         category: 'reload',
         startDate: '2023-01-01',
         endDate: '2023-12-31',
@@ -312,6 +360,7 @@ export default defineComponent({
         id: 3,
         title: 'Daily Free Spins',
         description: 'Get 10 free spins every day on selected slot games when you deposit at least MYR 50.',
+        image: '/assets/banners/3.jpg',
         category: 'freespins',
         startDate: '2023-01-01',
         endDate: '2023-12-31',
@@ -320,6 +369,7 @@ export default defineComponent({
         id: 4,
         title: 'VIP Cashback Program',
         description: 'VIP players receive up to 15% weekly cashback on net losses. The higher your VIP level, the more cashback you receive!',
+        image: '/assets/banners/4.jpg',
         category: 'vip',
         startDate: '2023-01-01',
         endDate: '2023-12-31',
@@ -328,6 +378,7 @@ export default defineComponent({
         id: 5,
         title: 'Refer a Friend Bonus',
         description: 'Refer a friend and receive MYR 50 when they make their first deposit. Your friend also gets an extra 10% bonus!',
+        image: '/assets/banners/5.jpg',
         category: 'referral',
         startDate: '2023-01-01',
         endDate: '2023-12-31',
@@ -336,6 +387,7 @@ export default defineComponent({
         id: 6,
         title: 'Tournament Tuesday',
         description: 'Join our weekly slot tournament every Tuesday and compete for a prize pool of MYR 1,000!',
+        image: '/assets/banners/7.jpg',
         category: 'tournament',
         startDate: '2023-01-01',
         endDate: '2023-12-31',
@@ -344,6 +396,7 @@ export default defineComponent({
         id: 7,
         title: 'Live Dealer Cashback',
         description: 'Play on any Live Dealer games and get 10% cashback on net losses, up to MYR 100 daily.',
+        image: '/assets/banners/8.jpg',
         category: 'cashback',
         startDate: '2023-01-01',
         endDate: '2023-12-31',
@@ -352,6 +405,7 @@ export default defineComponent({
         id: 8,
         title: 'Mobile Monday Bonus',
         description: 'Play on mobile every Monday and get a 25% deposit bonus up to MYR 100.',
+        image: '/assets/banners/4.jpg',
         category: 'mobile',
         startDate: '2023-01-01',
         endDate: '2023-12-31',
@@ -393,6 +447,11 @@ export default defineComponent({
       const categories = promotions.value.map(p => p.category);
       return [...new Set(categories)];
     });
+
+    // Get count of promotions in a category
+    const getCategoryCount = (category: string): number => {
+      return promotions.value.filter(p => p.category === category).length;
+    };
 
     // Get featured promotion
     const featuredPromotion = computed(() => {
@@ -603,14 +662,50 @@ export default defineComponent({
       claimPromotion,
       fetchPromotions,
       authState,
-      heroPlaceholder: svgPlaceholder(1200, 400, '#1F2937', '#FFFFFF', 'Promotions'),
-      cardPlaceholder: svgPlaceholder(600, 300, '#374151', '#FFFFFF', 'Promotion')
+      banners,
+      getCategoryCount,
+      Autoplay,
+      Pagination
     };
   }
 });
 </script>
 
 <style scoped>
+/* Banner carousel styles */
+.banner-swiper {
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.banner-slide {
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.banner-image {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.swiper-pagination-bullet {
+  background: white !important;
+  opacity: 0.7;
+}
+
+.swiper-pagination-bullet-active {
+  background: #0066FF !important;
+  opacity: 1;
+}
+
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -676,5 +771,108 @@ export default defineComponent({
 
 .prose :deep(a:hover) {
   color: #1d4ed8;
+}
+
+/* Ensure images maintain aspect ratio and don't get cropped */
+img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  image-rendering: auto;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Aspect ratio for consistent card sizing - matches banner images (1200x400 = 3:1) */
+.aspect-\[3\/1\] {
+  aspect-ratio: 3 / 1;
+}
+
+/* Remove all gaps from promotion card images */
+.relative.aspect-\[3\/1\] {
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 0 !important;
+  font-size: 0 !important;
+}
+
+.promotion-card-image {
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: fill !important;
+  vertical-align: top !important;
+  line-height: 0 !important;
+  border: none !important;
+  outline: none !important;
+}
+
+/* Remove visual gaps from featured promotion image only - keep clickable areas */
+.featured-promotion-wrapper {
+  gap: 0 !important;
+  margin: 0 !important;
+}
+
+.featured-image-container {
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 0 !important;
+  font-size: 0 !important;
+  display: block !important;
+  width: 100% !important;
+  aspect-ratio: 3 / 1 !important;
+  overflow: hidden !important;
+  cursor: pointer; /* Make image clickable */
+}
+
+.featured-image-container:hover {
+  opacity: 0.95; /* Visual feedback on hover */
+}
+
+.featured-promotion-image {
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: fill !important;
+  border: none !important;
+  outline: none !important;
+  line-height: 0 !important;
+  vertical-align: top !important;
+  font-size: 0 !important;
+  pointer-events: auto; /* Ensure image is clickable */
+}
+
+/* Remove gap between image and content in flex container - but keep content padding */
+.featured-promotion-wrapper > .featured-image-container {
+  margin-bottom: 0 !important;
+  margin-top: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+.featured-promotion-wrapper > .featured-image-container + div {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  /* Keep padding for text content - don't remove this! */
+}
+
+/* On mobile (flex-col), remove gap between image and text */
+@media (max-width: 768px) {
+  .featured-promotion-wrapper.flex-col > .featured-image-container {
+    margin-bottom: 0 !important;
+  }
+  
+  .featured-promotion-wrapper.flex-col > .featured-image-container + div {
+    margin-top: 0 !important;
+  }
+}
+
+/* Ensure images fill containers properly */
+img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  image-rendering: auto;
 }
 </style>

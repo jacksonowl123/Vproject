@@ -341,16 +341,29 @@ export default defineComponent({
         const launchUrl = (response as any)?.url || (response as any)?.launch?.Url;
         if (launchUrl) {
           // Open game in a new tab (not a popup window)
-          // Using '_blank' without window features opens a new tab instead of a popup
-          const gameWindow = window.open(launchUrl, '_blank');
+          // For mobile compatibility, create an anchor element and click it
+          // This is more reliable than window.open() on mobile browsers
+          const link = document.createElement('a');
+          link.href = launchUrl;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
           
-          // Check if new tab was blocked
-          if (!gameWindow || gameWindow.closed || typeof gameWindow.closed === 'undefined') {
-            // New tab blocked, fallback to same window navigation
-            console.warn('New tab blocked, opening in same window');
-            window.location.href = launchUrl;
-          } else {
-            // Focus the new tab
+          // Append to body temporarily (required for some mobile browsers)
+          document.body.appendChild(link);
+          
+          // Trigger click
+          link.click();
+          
+          // Remove the link element after a short delay
+          setTimeout(() => {
+            document.body.removeChild(link);
+          }, 100);
+          
+          // Also try window.open as a backup
+          const gameWindow = window.open(launchUrl, '_blank', 'noopener,noreferrer');
+          
+          // Focus the new tab if window.open succeeded
+          if (gameWindow) {
             gameWindow.focus();
           }
         } else {
