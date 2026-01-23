@@ -23,19 +23,19 @@
     </div>
 
     <!-- Right section -->
-    <div class="flex items-center justify-end">
-      <!-- Login/Register buttons - Only show on desktop if not logged in -->
+    <div class="flex items-center justify-end gap-2">
+      <!-- Login/Register buttons - Show on all screen sizes if not logged in -->
       <template v-if="!authState.isLoggedIn">
-        <div class="hidden md:flex items-center space-x-4">
+        <div class="flex items-center space-x-2 md:space-x-4">
           <router-link 
             to="/login" 
-            class="px-6 py-2 text-[#0066FF] font-semibold hover:text-blue-700"
+            class="px-3 py-1.5 md:px-6 md:py-2 text-[#0066FF] font-semibold hover:text-blue-700 text-sm md:text-base"
           >
             Login
           </router-link>
           <router-link 
             to="/register" 
-            class="px-6 py-2 bg-[#0066FF] text-white rounded-lg font-semibold hover:bg-blue-600"
+            class="px-3 py-1.5 md:px-6 md:py-2 bg-[#0066FF] text-white rounded-lg font-semibold hover:bg-blue-600 text-sm md:text-base"
           >
             Register
           </router-link>
@@ -45,7 +45,7 @@
       <template v-else>
         <button 
           @click="handleLogout" 
-          class="px-6 py-2 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600"
+          class="px-3 py-1.5 md:px-6 md:py-2 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 text-sm md:text-base"
         >
           Logout
         </button>
@@ -54,7 +54,7 @@
       <!-- Language selector - Only show on mobile -->
       <button 
         @click="toggleLanguage" 
-        class="md:hidden flex items-center"
+        class="md:hidden flex items-center ml-2"
       >
         <img :src="dummyImages.languageFlag" alt="Language" class="w-6 h-6">
       </button>

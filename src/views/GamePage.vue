@@ -1,22 +1,26 @@
 <template>
   <div class="max-w-7xl mx-auto">
     <!-- Hero Banner Carousel -->
-    <div class="relative mb-8 w-full rounded-xl overflow-hidden shadow-lg">
+    <div class="relative mb-8 w-full rounded-xl overflow-hidden shadow-lg" style="line-height: 0; font-size: 0; margin: 0; padding: 0;">
       <swiper
         :modules="[Autoplay, Pagination]"
         :slides-per-view="1"
         :loop="true"
         :autoplay="{ delay: 5000, disableOnInteraction: false }"
         :pagination="{ clickable: true }"
-        class="banner-swiper h-[300px] md:h-[400px] w-full"
+        class="banner-swiper w-full"
+        style="aspect-ratio: 3 / 1; line-height: 0; font-size: 0; margin: 0; padding: 0;"
       >
         <swiper-slide v-for="(banner, index) in banners" :key="index" class="banner-slide">
-          <img
-            class="banner-image w-full h-full object-cover"
-            :src="banner"
-            :alt="`Banner ${index + 1}`"
-            loading="lazy"
-          />
+          <div style="width: 100%; height: 100%; line-height: 0; font-size: 0; margin: 0; padding: 0; display: block;">
+            <img
+              class="banner-image"
+              :src="banner"
+              :alt="`Banner ${index + 1}`"
+              style="display: block; width: 100%; height: 100%; object-fit: fill; object-position: center; margin: 0; padding: 0; line-height: 0; vertical-align: top; border: none; outline: none;"
+              loading="lazy"
+            />
+          </div>
         </swiper-slide>
       </swiper>
     </div>
@@ -454,6 +458,8 @@ export default defineComponent({
   width: 100% !important;
   margin: 0 !important;
   padding: 0 !important;
+  line-height: 0 !important;
+  font-size: 0 !important;
 }
 
 .banner-slide {
@@ -461,16 +467,23 @@ export default defineComponent({
   height: 100% !important;
   margin: 0 !important;
   padding: 0 !important;
+  line-height: 0 !important;
+  font-size: 0 !important;
+  display: block !important;
 }
 
 .banner-image {
   width: 100% !important;
   height: 100% !important;
-  object-fit: cover !important;
+  object-fit: fill !important;
   object-position: center !important;
   display: block !important;
   margin: 0 !important;
   padding: 0 !important;
+  line-height: 0 !important;
+  vertical-align: top !important;
+  border: none !important;
+  outline: none !important;
 }
 
 .swiper-pagination-bullet {

@@ -1,26 +1,5 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 py-6">
-    <!-- Hero Banner Carousel -->
-    <div class="relative mb-10 w-full rounded-xl overflow-hidden shadow-lg">
-      <swiper
-        :modules="[Autoplay, Pagination]"
-        :slides-per-view="1"
-        :loop="true"
-        :autoplay="{ delay: 5000, disableOnInteraction: false }"
-        :pagination="{ clickable: true }"
-        class="banner-swiper h-[300px] md:h-[400px] w-full"
-      >
-        <swiper-slide v-for="(banner, index) in banners" :key="index" class="banner-slide">
-          <img
-            class="banner-image w-full h-full object-cover"
-            :src="banner"
-            :alt="`Promotion Banner ${index + 1}`"
-            loading="lazy"
-          />
-        </swiper-slide>
-      </swiper>
-    </div>
-
     <!-- Category Filter Section -->
     <div class="mb-6">
       <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-3">Promotion Categories</h2>
@@ -277,11 +256,6 @@
 <script lang="ts">
 import { defineComponent, ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { Swiper, SwiperSlide } from 'swiper/vue';
-import 'swiper/css';
-import 'swiper/css/autoplay';
-import 'swiper/css/pagination';
-import { Autoplay, Pagination } from 'swiper/modules';
 import { laravelApi as api } from '@/services/laravelApi';
 import Swal from 'sweetalert2';
 import { authState } from '@/store/auth';
@@ -306,10 +280,6 @@ interface Promotion {
 
 export default defineComponent({
   name: 'PromotionPage',
-  components: {
-    Swiper,
-    SwiperSlide,
-  },
   setup() {
     const router = useRouter();
     const loading = ref(true);
@@ -318,14 +288,6 @@ export default defineComponent({
     const selectedPromotion = ref<Promotion | null>(null);
     const selectedCategory = ref('all');
     const searchQuery = ref('');
-
-    // Banner images from Banner 1200x400 folder
-    const banners = computed(() => {
-      const bannerCount = 8; // We have 8 banner images (1.jpg to 8.jpg)
-      return Array.from({ length: bannerCount }, (_, i) => {
-        return `/assets/banners/${i + 1}.jpg`;
-      });
-    });
 
     // Mock promotions for development - will be replaced with API data
     const mockPromotions: Promotion[] = [
@@ -662,50 +624,13 @@ export default defineComponent({
       claimPromotion,
       fetchPromotions,
       authState,
-      banners,
-      getCategoryCount,
-      Autoplay,
-      Pagination
+      getCategoryCount
     };
   }
 });
 </script>
 
 <style scoped>
-/* Banner carousel styles */
-.banner-swiper {
-  width: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-.banner-slide {
-  width: 100% !important;
-  height: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-.banner-image {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-  object-position: center !important;
-  display: block !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-.swiper-pagination-bullet {
-  background: white !important;
-  opacity: 0.7;
-}
-
-.swiper-pagination-bullet-active {
-  background: #0066FF !important;
-  opacity: 1;
-}
-
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
