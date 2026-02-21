@@ -13,6 +13,7 @@
     <link rel="stylesheet" crossorigin href="/assets/index-C0lMQn_D.css">
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app"></div>
+
   </body>
 </html>
