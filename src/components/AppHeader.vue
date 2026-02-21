@@ -18,8 +18,8 @@
         <i class="fas fa-bars text-xl"></i>
       </button>
 
-      <!-- Logo - Next to hamburger on web, centered on mobile -->
-      <img :src="dummyImages.logo" alt="KK8" class="h-8 md:ml-0 absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0 md:left-auto">
+      <!-- Logo - Next to hamburger on web, hidden on mobile -->
+      <img :src="dummyImages.logo" alt="KK8" class="hidden md:block h-8 md:ml-0 md:static">
     </div>
 
     <!-- Right section -->

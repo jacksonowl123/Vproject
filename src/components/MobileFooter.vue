@@ -1,5 +1,5 @@
 <template>
-  <footer class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t z-50">
+  <footer class="hidden fixed bottom-0 left-0 right-0 bg-white border-t z-50">
     <div class="grid grid-cols-5 gap-1">
       <router-link 
         to="/promotion" 

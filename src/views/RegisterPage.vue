@@ -1,19 +1,15 @@
 <template>
-  <div class="flex min-h-screen">
-    <!-- Left side - Register Form -->
-    <div class="w-1/2 p-8 flex flex-col justify-center">
+  <div class="flex flex-col md:flex-row min-h-screen">
+    <!-- Register Form - Left on desktop, Below on mobile -->
+    <div class="w-full md:w-1/2 p-8 flex flex-col justify-center">
       <div class="max-w-md mx-auto w-full">
         <!-- Logo -->
-        <div class="mb-8">
-          <img src="@/assets/logo.png" alt="KK8" class="h-12">
-          <h1 class="text-2xl font-bold text-[#0066FF] mt-4">Create Account</h1>
+        <div class="mb-8 text-center">
+          <img src="@/assets/logo.png" alt="KK8" class="h-12 mx-auto">
+          <h1 class="text-2xl font-bold text-[#0066FF] mt-2">Create Account</h1>
         </div>
 
         <form @submit.prevent="register">
-          <div v-if="error" class="bg-red-100 text-red-600 p-3 rounded-lg mb-4">
-            {{ error }}
-          </div>
-
           <div class="mb-4">
             <input 
               type="text" 
@@ -57,8 +53,8 @@
       </div>
     </div>
 
-    <!-- Right side - Promo Section -->
-    <div class="w-1/2 bg-[#0066FF]">
+    <!-- Promo Section - Right on desktop, Above on mobile -->
+    <div class="w-full md:w-1/2 bg-[#0066FF] order-first md:order-last">
       <div class="h-full flex items-center justify-center p-8">
         <div class="text-center text-white">
           <h2 class="text-4xl font-bold mb-4">JOIN US TODAY</h2>
@@ -84,7 +80,6 @@ export default defineComponent({
     const username = ref('');
     const password = ref('');
     const loading = ref(false);
-    const error = ref('');
 
     // Validate all input fields
     const validateInput = () => {
@@ -112,13 +107,17 @@ export default defineComponent({
     const register = async () => {
       try {
         loading.value = true;
-        error.value = '';
 
         // Validate input
         const validationError = validateInput();
         if (validationError) {
-          error.value = validationError;
           loading.value = false;
+          Swal.fire({
+            icon: 'error',
+            title: 'Validation Error',
+            text: validationError,
+            confirmButtonColor: '#0066FF',
+          });
           return;
         }
 
@@ -165,27 +164,31 @@ export default defineComponent({
           console.error('Auto-login error:', loginError);
           router.push('/login');
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Registration error:', err);
         
         // Try to extract the most specific error message
-        if (err.message && err.message.includes('username already exists')) {
-          error.value = 'This username is already taken. Please choose another one.';
-        } else if (err.message && err.message.includes('email already exists')) {
-          error.value = 'This email is already registered. Please use a different email.';
-        } else if (err.message && err.message.includes('Network Error')) {
-          error.value = 'Network error. Please check your internet connection and try again.';
-        } else if (err.message && err.message.includes('CORS')) {
-          error.value = 'Connection issue. Please try again.';
-        } else {
-          error.value = err.message || 'Failed to create account. Please try again.';
+        let errorMessage = 'Failed to create account. Please try again.';
+        
+        if (err?.message) {
+          if (err.message.includes('username already exists')) {
+            errorMessage = 'This username is already taken. Please choose another one.';
+          } else if (err.message.includes('email already exists')) {
+            errorMessage = 'This email is already registered. Please use a different email.';
+          } else if (err.message.includes('Network Error')) {
+            errorMessage = 'Network error. Please check your internet connection and try again.';
+          } else if (err.message.includes('CORS')) {
+            errorMessage = 'Connection issue. Please try again.';
+          } else {
+            errorMessage = err.message;
+          }
         }
         
         // Show error message
         Swal.fire({
           icon: 'error',
           title: 'Registration Failed',
-          text: error.value,
+          text: errorMessage,
           confirmButtonColor: '#0066FF',
         });
       } finally {
@@ -197,7 +200,6 @@ export default defineComponent({
       username,
       password,
       loading,
-      error,
       register
     };
   }

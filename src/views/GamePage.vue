@@ -338,39 +338,47 @@ export default defineComponent({
 
         console.log(`Launching game for platform ID: ${platformId}`);
         const response = await api.launchGame(platformId);
-        
-        // Close loading dialog
-        Swal.close();
 
         const launchUrl = (response as any)?.url || (response as any)?.launch?.Url;
         if (launchUrl) {
-          // Open game in a new tab (not a popup window)
-          // For mobile compatibility, create an anchor element and click it
-          // This is more reliable than window.open() on mobile browsers
+          // For mobile: Must open URL immediately while still in user gesture context
+          // Don't close dialog yet - open URL first
+          
+          // Method 1: window.open (try this first as it's more reliable)
+          let gameWindow: Window | null = null;
+          try {
+            gameWindow = window.open(launchUrl, '_blank', 'noopener,noreferrer');
+            if (gameWindow) {
+              gameWindow.focus();
+            }
+          } catch (e) {
+            console.log('window.open failed:', e);
+          }
+          
+          // Method 2: Anchor click (backup method, more reliable on some mobile browsers)
+          // Do this synchronously to maintain user gesture context
           const link = document.createElement('a');
           link.href = launchUrl;
           link.target = '_blank';
           link.rel = 'noopener noreferrer';
+          link.style.display = 'none';
           
-          // Append to body temporarily (required for some mobile browsers)
           document.body.appendChild(link);
           
-          // Trigger click
+          // Click immediately (synchronous - critical for mobile)
           link.click();
           
-          // Remove the link element after a short delay
+          // Clean up after a short delay
           setTimeout(() => {
-            document.body.removeChild(link);
+            if (document.body.contains(link)) {
+              document.body.removeChild(link);
+            }
           }, 100);
           
-          // Also try window.open as a backup
-          const gameWindow = window.open(launchUrl, '_blank', 'noopener,noreferrer');
-          
-          // Focus the new tab if window.open succeeded
-          if (gameWindow) {
-            gameWindow.focus();
-          }
+          // Close loading dialog after opening URL
+          Swal.close();
         } else {
+          Swal.close();
           throw new Error('Game URL not available');
         }
       } catch (error: any) {
