@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-gray-200 rounded-full p-4 flex items-center balance-update-trigger" ref="balanceContainer">
+  <div v-if="authState.isLoggedIn" class="bg-gray-200 rounded-full p-4 flex items-center balance-update-trigger" ref="balanceContainer">
     <span class="mr-4">
       {{ balance.cash.currency }} <span v-if="isBalanceHidden">******</span><span v-else>{{ balance.cash.amount }}</span> Cash
     </span>
@@ -149,7 +149,8 @@ export default defineComponent({
       toggleVisibility,
       onRecharge,
       fetchBalance,
-      balanceContainer
+      balanceContainer,
+      authState
     };
   }
 });

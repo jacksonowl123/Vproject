@@ -33,7 +33,7 @@
           @balance-updated="handleBalanceUpdate" 
         />
       </div>
-      <div class="relative w-full md:w-80">
+      <div class="relative w-full md:w-80 hidden">
         <input 
           type="text" 
           v-model="searchQuery" 

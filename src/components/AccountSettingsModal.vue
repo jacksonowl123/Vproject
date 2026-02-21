@@ -94,7 +94,7 @@
             <div class="flex justify-end pt-4">
               <button
                 type="button" 
-                @click="resetProfileForm" 
+                @click="close" 
                 class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 mr-2"
               >
                 Cancel
@@ -204,7 +204,7 @@
             <div class="flex justify-end pt-4">
               <button
                 type="button" 
-                @click="resetPasswordForm" 
+                @click="close" 
                 class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 mr-2"
               >
                 Cancel
