@@ -7,15 +7,23 @@
       <!-- User Info -->
       <div class="bg-white p-4 rounded-lg shadow-md">
         <!-- Profile Header -->
-        <div class="flex items-center mb-4 border-b pb-3">
-          <div class="bg-blue-100 p-3 rounded-full mr-3">
-            <i class="fas fa-user text-blue-500"></i>
+        <div class="flex items-center justify-between mb-4 border-b pb-3">
+          <div class="flex items-center">
+            <div class="bg-blue-100 p-3 rounded-full mr-3">
+              <i class="fas fa-user text-blue-500"></i>
+            </div>
+            <div>
+              <h3 class="font-semibold text-lg">{{ authState.memberDetails.usr }}</h3>
+              <p class="text-sm text-gray-500">ID: {{ authState.memberDetails.iid || 'N/A' }}</p>
+              <p class="text-sm text-gray-500">{{ authState.memberDetails.email || 'No email' }}</p>
+            </div>
           </div>
-          <div>
-            <h3 class="font-semibold text-lg">{{ authState.memberDetails.usr }}</h3>
-            <p class="text-sm text-gray-500">ID: {{ authState.memberDetails.iid || 'N/A' }}</p>
-            <p class="text-sm text-gray-500">{{ authState.memberDetails.email || 'No email' }}</p>
-          </div>
+          <button 
+            @click="showAccountSettings = true" 
+            class="text-sm text-blue-600 hover:text-blue-800 flex items-center"
+          >
+            <i class="fas fa-cog mr-1"></i> Account Settings
+          </button>
         </div>
 
         <!-- Account Status -->
@@ -56,20 +64,6 @@
         </div>
       </div>
 
-      <!-- Add Account Settings button in the User Info section -->
-      <div class="mb-6 bg-white rounded-lg shadow-md p-4">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg font-semibold">User Info</h2>
-          <button 
-            @click="showAccountSettings = true" 
-            class="text-sm text-blue-600 hover:text-blue-800 flex items-center"
-          >
-            <i class="fas fa-cog mr-1"></i> Account Settings
-          </button>
-        </div>
-        <!-- ... existing user info ... -->
-      </div>
-
       <!-- Transaction Actions Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Deposit Section -->
@@ -89,7 +83,7 @@
             </router-link>
             
             <!-- Payment Method Options -->
-            <div class="grid grid-cols-2 gap-2 mt-3">
+            <div class="grid grid-cols-2 gap-2 mt-3 hidden">
               <router-link
                 to="/member/deposit?method=bank"
                 class="flex flex-col items-center p-2 bg-green-50 text-green-700 rounded hover:bg-green-100"
@@ -137,7 +131,7 @@
             </router-link>
             
             <!-- Withdrawal Method Options -->
-            <div class="grid grid-cols-2 gap-2 mt-3">
+            <div class="grid grid-cols-2 gap-2 mt-3 hidden">
               <router-link
                 to="/withdraw?method=bank"
                 class="flex flex-col items-center p-2 bg-blue-50 text-blue-700 rounded hover:bg-blue-100"

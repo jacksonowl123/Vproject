@@ -171,16 +171,50 @@ export default defineComponent({
         let errorMessage = 'Failed to create account. Please try again.';
         
         if (err?.message) {
-          if (err.message.includes('username already exists')) {
+          const errorMsg = err.message.toLowerCase();
+          
+          // Check for username/login already exists
+          if (errorMsg.includes('login already exist') || 
+              errorMsg.includes('username already exists') ||
+              errorMsg.includes('login already exists')) {
             errorMessage = 'This username is already taken. Please choose another one.';
-          } else if (err.message.includes('email already exists')) {
+          } 
+          // Check for email already exists
+          else if (errorMsg.includes('email already exists') || 
+                   errorMsg.includes('email already exist')) {
             errorMessage = 'This email is already registered. Please use a different email.';
-          } else if (err.message.includes('Network Error')) {
+          } 
+          // Check for network errors
+          else if (errorMsg.includes('network error') || 
+                   errorMsg.includes('failed to fetch')) {
             errorMessage = 'Network error. Please check your internet connection and try again.';
-          } else if (err.message.includes('CORS')) {
+          } 
+          // Check for connection/CORS errors
+          else if (errorMsg.includes('cors') || 
+                   errorMsg.includes('connection')) {
             errorMessage = 'Connection issue. Please try again.';
-          } else {
-            errorMessage = err.message;
+          }
+          // Try to extract user-friendly message from API error response
+          else if (err?.response?.data) {
+            const apiError = err.response.data;
+            
+            // Check if there's a nested error structure
+            if (apiError.errors && apiError.errors.login) {
+              errorMessage = 'This username is already taken. Please choose another one.';
+            } else if (apiError.message) {
+              const apiMsg = apiError.message.toLowerCase();
+              if (apiMsg.includes('login already exist')) {
+                errorMessage = 'This username is already taken. Please choose another one.';
+              } else if (apiMsg.includes('email already exist')) {
+                errorMessage = 'This email is already registered. Please use a different email.';
+              } else {
+                // Try to extract clean message (remove technical details)
+                const cleanMsg = apiError.message.replace(/Register API request failed with status \d+:/, '').trim();
+                if (cleanMsg && !cleanMsg.includes('{') && !cleanMsg.includes('status')) {
+                  errorMessage = cleanMsg;
+                }
+              }
+            }
           }
         }
         

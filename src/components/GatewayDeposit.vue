@@ -13,7 +13,7 @@
             id="amount" 
             v-model.number="amount" 
             type="number" 
-            class="w-full p-3 pl-12 border rounded-lg" 
+            class="w-full p-3 pl-12 bg-white text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400" 
             placeholder="Enter amount"
             min="10"
             step="0.01"

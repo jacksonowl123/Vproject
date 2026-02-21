@@ -320,7 +320,7 @@
         <deposit-diagnostics v-if="showDiagnostics" />
         
         <!-- Submit Button -->
-        <div class="bg-white p-4 rounded-lg shadow-md">
+        <div class="bg-white p-4 rounded-lg shadow-md hidden">
         <div class="flex justify-end">
           <button 
             @click="submitDeposit" 

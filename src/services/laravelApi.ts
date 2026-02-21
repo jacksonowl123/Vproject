@@ -261,7 +261,50 @@ export const laravelApi = {
       return response.data;
     } catch (error: any) {
       console.error('Create member error:', error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || 'Member creation failed');
+      
+      // Try to extract user-friendly error message
+      let errorMessage = 'Member creation failed';
+      
+      if (error.response?.data) {
+        const apiError = error.response.data;
+        
+        // Check for nested error structure (errors.login)
+        if (apiError.errors && apiError.errors.login) {
+          errorMessage = 'This username is already taken. Please choose another one.';
+        } 
+        // Check for message field
+        else if (apiError.message) {
+          const msg = apiError.message.toLowerCase();
+          
+          // Extract clean message from nested JSON strings
+          if (msg.includes('login already exist')) {
+            errorMessage = 'This username is already taken. Please choose another one.';
+          } else if (msg.includes('email already exist')) {
+            errorMessage = 'This email is already registered. Please use a different email.';
+          } else {
+            // Try to parse JSON string if present
+            try {
+              const jsonMatch = apiError.message.match(/\{.*\}/);
+              if (jsonMatch) {
+                const parsed = JSON.parse(jsonMatch[0]);
+                if (parsed.message && parsed.message.toLowerCase().includes('login already exist')) {
+                  errorMessage = 'This username is already taken. Please choose another one.';
+                } else {
+                  errorMessage = parsed.message || apiError.message;
+                }
+              } else {
+                errorMessage = apiError.message;
+              }
+            } catch {
+              errorMessage = apiError.message;
+            }
+          }
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      throw new Error(errorMessage);
     }
   },
 
