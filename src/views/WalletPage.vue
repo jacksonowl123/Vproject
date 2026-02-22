@@ -113,40 +113,6 @@
           </div>
         </div>
 
-        <!-- Quick Actions -->
-        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-          <h3 class="text-xl font-semibold mb-6">Quick Actions</h3>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <router-link to="/deposit" class="flex flex-col items-center bg-blue-50 p-4 rounded-lg hover:bg-blue-100 transition-colors">
-              <div class="bg-blue-100 p-3 rounded-full mb-3">
-                <i class="fas fa-plus text-blue-500 text-lg"></i>
-              </div>
-              <span class="font-medium text-gray-700">Deposit</span>
-            </router-link>
-            
-            <router-link to="/withdraw" class="flex flex-col items-center bg-red-50 p-4 rounded-lg hover:bg-red-100 transition-colors">
-              <div class="bg-red-100 p-3 rounded-full mb-3">
-                <i class="fas fa-minus text-red-500 text-lg"></i>
-              </div>
-              <span class="font-medium text-gray-700">Withdraw</span>
-            </router-link>
-            
-            <button @click="showTransferDialog = true" class="flex flex-col items-center bg-purple-50 p-4 rounded-lg hover:bg-purple-100 transition-colors">
-              <div class="bg-purple-100 p-3 rounded-full mb-3">
-                <i class="fas fa-exchange-alt text-purple-500 text-lg"></i>
-              </div>
-              <span class="font-medium text-gray-700">Transfer</span>
-            </button>
-            
-            <router-link to="/wallet/banks" class="flex flex-col items-center bg-green-50 p-4 rounded-lg hover:bg-green-100 transition-colors">
-              <div class="bg-green-100 p-3 rounded-full mb-3">
-                <i class="fas fa-university text-green-500 text-lg"></i>
-              </div>
-              <span class="font-medium text-gray-700">Bank Accounts</span>
-            </router-link>
-          </div>
-        </div>
-
         <!-- Recent Transactions Section Hidden -->
 
         <!-- Game Platforms -->

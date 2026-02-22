@@ -84,7 +84,7 @@
           :key="game.id"
           class="group relative rounded-xl overflow-hidden shadow-md transition transform hover:shadow-xl"
         >
-          <div class="w-full aspect-[2/3] overflow-hidden bg-gray-100">
+          <div class="w-full game-card-aspect overflow-hidden bg-gray-100">
             <img
               :src="game.image"
               :alt="game.name"
@@ -533,14 +533,13 @@ img {
   aspect-ratio: 4 / 3;
 }
 
-.aspect-\[2\/3\] {
+/* Game card aspect: 2/3 on mobile, 3/4 on web */
+.game-card-aspect {
   aspect-ratio: 2 / 3;
 }
-
-/* Ensure images scale smoothly on different screen sizes */
-@media (max-width: 640px) {
-  .aspect-\[2\/3\] {
-    aspect-ratio: 2 / 3;
+@media (min-width: 768px) {
+  .game-card-aspect {
+    aspect-ratio: 3 / 4;
   }
 }
 </style>

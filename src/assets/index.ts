@@ -1,6 +1,6 @@
 // Export dummy images
 export const dummyImages = {
-  logo: '/favicon.ico',
+  logo: '/logo.png',
   languageFlag: '/favicon.ico',
   promoCharacter: '/favicon.ico',
   bannerImage: '/favicon.ico'

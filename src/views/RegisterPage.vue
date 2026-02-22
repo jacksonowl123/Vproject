@@ -5,7 +5,7 @@
       <div class="max-w-md mx-auto w-full">
         <!-- Logo -->
         <div class="mb-8 text-center">
-          <img src="@/assets/logo.png" alt="KK8" class="h-12 mx-auto">
+          <img :src="dummyImages.logo" alt="Elive" class="h-12 mx-auto">
           <h1 class="text-2xl font-bold text-[#0066FF] mt-2">Create Account</h1>
         </div>
 
@@ -72,6 +72,7 @@ import { useRouter } from 'vue-router';
 import { laravelApi as api } from '@/services/laravelApi';
 import { setLoginState } from '@/store/auth';
 import Swal from 'sweetalert2';
+import { dummyImages } from '@/assets';
 
 export default defineComponent({
   name: 'RegisterPage',
@@ -234,7 +235,8 @@ export default defineComponent({
       username,
       password,
       loading,
-      register
+      register,
+      dummyImages
     };
   }
 });

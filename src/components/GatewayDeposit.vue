@@ -51,7 +51,7 @@
           <i class="fas fa-spinner fa-spin mr-2"></i>Processing...
         </span>
         <span v-else>
-          Process Gateway Deposit
+          Submit
         </span>
       </button>
     </form>

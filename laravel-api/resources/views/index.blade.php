@@ -7,10 +7,10 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0"
     />
-    <link rel="icon" href="/favicon.ico" />
-    <title>Vite</title>
-    <script type="module" crossorigin src="/assets/index-DnCGdnc-.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-3DLjZboo.css">
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <title>Elive</title>
+    <script type="module" crossorigin src="/assets/index-CvW9kgZO.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CfeYqGl_.css">
   </head>
   <body>
     <div id="app"></div>

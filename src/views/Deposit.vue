@@ -38,7 +38,7 @@
             <div class="bg-green-100 p-2 rounded-full mr-3">
               <i class="fas fa-credit-card text-green-500"></i>
             </div>
-            <h3 class="text-xl font-semibold">Gateway Deposit</h3>
+            <h3 class="text-xl font-semibold">Deposit</h3>
           </div>
           <GatewayDeposit />
         </div>

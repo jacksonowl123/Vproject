@@ -18,8 +18,8 @@
         <i class="fas fa-bars text-xl"></i>
       </button>
 
-      <!-- Logo - Next to hamburger on web, hidden on mobile -->
-      <img :src="dummyImages.logo" alt="KK8" class="hidden md:block h-8 md:ml-0 md:static">
+      <!-- Logo - Show on both mobile and desktop -->
+      <img :src="dummyImages.logo" alt="Elive" class="h-10 ml-3 md:h-12 md:ml-0">
     </div>
 
     <!-- Right section -->
@@ -50,14 +50,6 @@
           Logout
         </button>
       </template>
-
-      <!-- Language selector - Only show on mobile -->
-      <button 
-        @click="toggleLanguage" 
-        class="md:hidden flex items-center ml-2"
-      >
-        <img :src="dummyImages.languageFlag" alt="Language" class="w-6 h-6">
-      </button>
     </div>
   </div>
 </template>
