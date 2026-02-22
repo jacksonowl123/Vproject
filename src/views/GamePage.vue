@@ -13,7 +13,7 @@
       >
         <swiper-slide v-for="(banner, index) in banners" :key="index" class="banner-slide">
           <div style="width: 100%; height: 100%; line-height: 0; font-size: 0; margin: 0; padding: 0; display: block;">
-            <img
+          <img
               class="banner-image"
               :src="banner"
               :alt="`Banner ${index + 1}`"
@@ -348,9 +348,9 @@ export default defineComponent({
           let gameWindow: Window | null = null;
           try {
             gameWindow = window.open(launchUrl, '_blank', 'noopener,noreferrer');
-            if (gameWindow) {
-              gameWindow.focus();
-            }
+          if (gameWindow) {
+            gameWindow.focus();
+          }
           } catch (e) {
             console.log('window.open failed:', e);
           }

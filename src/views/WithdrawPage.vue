@@ -26,77 +26,15 @@
           </div>
         </div>
 
-        <!-- Withdrawal Method Selection -->
+        <!-- Your Bank Account -->
         <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-          <h3 class="text-xl font-semibold mb-4">
-            <i class="fas fa-exchange-alt mr-2 text-blue-500"></i>
-            Withdrawal Method
-          </h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div 
-              v-for="method in withdrawalMethods" 
-              :key="method.id"
-              :class="['border-2 rounded-lg p-4 cursor-pointer transition-all', 
-                      {'border-blue-500 bg-blue-50': selectedWithdrawalMethod === method.id, 'border-gray-200 hover:border-blue-300': selectedWithdrawalMethod !== method.id}]"
-              @click="selectWithdrawalMethod(method.id)"
-            >
-              <div class="text-center">
-                <i :class="method.icon + ' text-3xl mb-2'"></i>
-                <p class="font-semibold">{{ method.name }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-          
-        <!-- Amount Selection -->
-        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-          <h3 class="text-xl font-semibold mb-4">
-            <i class="fas fa-coins mr-2 text-green-500"></i>
-            Withdrawal Amount
-          </h3>
-          
-          <div class="mb-4">
-            <div class="relative">
-              <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-semibold">
-                {{ authState.memberDetails?.account?.cash?.currency || 'MYR' }}
-              </span>
-              <input 
-                type="number" 
-                v-model="amount" 
-                class="w-full pl-16 pr-4 py-3 text-xl font-semibold border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" 
-                :min="minWithdraw" 
-                :max="maxWithdraw"
-                placeholder="100"
-              />
-            </div>
-          </div>
-
-          <!-- Quick Amount Buttons -->
-          <div class="grid grid-cols-5 gap-2 mb-4">
-              <button 
-                v-for="quickAmount in quickAmounts" 
-                :key="quickAmount"
-                @click="amount = quickAmount"
-              class="py-2 px-3 bg-gray-100 hover:bg-blue-100 text-gray-700 hover:text-blue-700 rounded-lg font-medium transition-colors"
-              >
-                {{ authState.memberDetails?.account?.cash?.currency || 'MYR' }} {{ quickAmount }}
-              </button>
-            </div>
-
-          <div class="flex justify-between text-sm text-gray-600">
-            <span>Min withdrawal: {{ authState.memberDetails?.account?.cash?.currency || 'MYR' }} {{ minWithdraw }}</span>
-            <span>Max withdrawal: {{ authState.memberDetails?.account?.cash?.currency || 'MYR' }} {{ maxWithdraw.toLocaleString() }}</span>
-          </div>
-        </div>
-
-        <!-- Bank Account Selection -->
-        <div v-if="selectedWithdrawalMethod === 'bank'" class="bg-white p-6 rounded-lg shadow-md mb-6">
+          <!-- When user has bank account(s): show list -->
+          <template v-if="bankAccounts.length > 0">
           <h3 class="text-xl font-semibold mb-4">
             <i class="fas fa-university mr-2 text-blue-500"></i>
             Your Bank Account
           </h3>
-          
-          <div v-if="bankAccounts.length > 0">
+          <p class="text-gray-600 mb-4">Select the account to receive your withdrawal.</p>
             <div class="space-y-3 mb-4">
                 <div 
                   v-for="(account, index) in bankAccounts" 
@@ -139,21 +77,65 @@
               <i class="fas fa-plus mr-2"></i>
               Add Another Bank Account
             </button>
-          </div>
-          
+          </template>
+
+          <!-- When user has no bank account: ask to add one -->
           <div v-else class="text-center py-8">
-            <div class="bg-gray-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
-              <i class="fas fa-university text-gray-400 text-2xl"></i>
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-6 mb-4">
+              <div class="bg-amber-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-university text-amber-600 text-2xl"></i>
+              </div>
+              <h4 class="text-lg font-semibold text-gray-800 mb-2">No Bank Account Added</h4>
+              <p class="text-gray-600 mb-4">You need to add a bank account before you can withdraw. Please add your bank account below.</p>
+              <button 
+                @click="showAddBankForm = true"
+                class="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors inline-flex items-center"
+              >
+                <i class="fas fa-plus mr-2"></i>
+                Add Bank Account
+              </button>
             </div>
-            <h4 class="text-lg font-semibold text-gray-700 mb-2">No Bank Account</h4>
-            <p class="text-gray-500 mb-4">Add your bank account to receive withdrawals</p>
-            <button 
-              @click="showAddBankForm = true"
-              class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-            >
-              <i class="fas fa-plus mr-2"></i>
-              Add Bank Account
-            </button>
+          </div>
+        </div>
+
+        <!-- Amount Selection -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+          <h3 class="text-xl font-semibold mb-4">
+            <i class="fas fa-coins mr-2 text-green-500"></i>
+            Withdrawal Amount
+          </h3>
+          
+          <div class="mb-4">
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-semibold">
+                {{ authState.memberDetails?.account?.cash?.currency || 'MYR' }}
+              </span>
+              <input 
+                type="number" 
+                v-model="amount" 
+                class="w-full pl-16 pr-4 py-3 text-xl font-semibold border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" 
+                :min="minWithdraw" 
+                :max="maxWithdraw"
+                placeholder="100"
+              />
+            </div>
+          </div>
+
+          <!-- Quick Amount Buttons -->
+          <div class="grid grid-cols-5 gap-2 mb-4">
+              <button 
+                v-for="quickAmount in quickAmounts" 
+                :key="quickAmount"
+                @click="amount = quickAmount"
+              class="py-2 px-3 bg-gray-100 hover:bg-blue-100 text-gray-700 hover:text-blue-700 rounded-lg font-medium transition-colors"
+              >
+                {{ authState.memberDetails?.account?.cash?.currency || 'MYR' }} {{ quickAmount }}
+              </button>
+            </div>
+
+          <div class="flex justify-between text-sm text-gray-600">
+            <span>Min withdrawal: {{ authState.memberDetails?.account?.cash?.currency || 'MYR' }} {{ minWithdraw }}</span>
+            <span>Max withdrawal: {{ authState.memberDetails?.account?.cash?.currency || 'MYR' }} {{ maxWithdraw.toLocaleString() }}</span>
           </div>
         </div>
 

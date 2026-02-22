@@ -15,22 +15,22 @@
         >
           All Promotions
         </button>
-        <button
-          v-for="category in promotionCategories"
-          :key="category"
-          @click="selectedCategory = category === selectedCategory ? 'all' : category"
-          :class="[
+            <button 
+              v-for="category in promotionCategories" 
+              :key="category"
+              @click="selectedCategory = category === selectedCategory ? 'all' : category"
+              :class="[
             'rounded-full px-6 py-2 font-medium transition flex items-center',
-            selectedCategory === category 
+                selectedCategory === category 
               ? 'bg-[#0066FF] text-white' 
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-          ]"
-        >
-          {{ formatCategory(category) }}
+              ]"
+            >
+              {{ formatCategory(category) }}
           <span class="ml-2 bg-white bg-opacity-20 text-xs px-2 py-0.5 rounded-full">
             {{ getCategoryCount(category) }}
           </span>
-        </button>
+            </button>
       </div>
     </div>
 
