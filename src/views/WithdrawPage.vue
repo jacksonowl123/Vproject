@@ -40,8 +40,8 @@
                   v-for="(account, index) in bankAccounts" 
                   :key="index"
                 :class="['border-2 rounded-lg p-4 cursor-pointer transition-all', 
-                        {'border-blue-500 bg-blue-50': selectedBank === (account.iid || index), 'border-gray-200 hover:border-gray-300': selectedBank !== (account.iid || index)}]"
-                @click="selectedBank = account.iid || index"
+                        {'border-blue-500 bg-blue-50': selectedBank === getAccountId(account, index), 'border-gray-200 hover:border-gray-300': selectedBank !== getAccountId(account, index)}]"
+                @click="selectedBank = getAccountId(account, index)"
                 >
                 <div class="flex items-center justify-between">
                   <div class="flex items-center space-x-4">
@@ -63,7 +63,16 @@
                       <i class="fas fa-star mr-1"></i>
                       Primary
                     </span>
-                    <i v-if="selectedBank === (account.iid || index)" class="fas fa-check-circle text-blue-600 text-xl"></i>
+                    <i v-if="selectedBank === getAccountId(account, index)" class="fas fa-check-circle text-blue-600 text-xl"></i>
+                    <button
+                      type="button"
+                      @click.stop="removeBankAccount(account, index)"
+                      class="text-red-600 hover:text-red-800 px-3 py-1 rounded-lg text-sm font-semibold hover:bg-red-50"
+                      :disabled="isLoading"
+                    >
+                      <i class="fas fa-trash-alt mr-1"></i>
+                      Remove
+                    </button>
                   </div>
                 </div>
               </div>
@@ -357,7 +366,6 @@ import { useToast } from 'vue-toastification';
 import { useRouter } from 'vue-router';
 import Swal from 'sweetalert2';
 import MemberCenter2 from './MemberCenter2.vue';
-import { BANK_IDS } from '@/utils/reference-ids';
 
 export default defineComponent({
   name: 'WithdrawPage',
@@ -372,7 +380,7 @@ export default defineComponent({
     const selectedWithdrawalMethod = ref('bank');
     const amount = ref(100);
     const fee = ref(0);
-    const selectedBank = ref('');
+    const selectedBank = ref<any>('');
     const bankAccounts = ref<any[]>([]);
     const showAddBankForm = ref(false);
     const cashBalance = ref('0.00');
@@ -390,23 +398,26 @@ export default defineComponent({
     const minWithdraw = 50;
     const maxWithdraw = 50000;
     
-    // Available banks (from reference-ids)
     const availableBanks = [
-      { id: BANK_IDS.MAYBANK, name: 'Maybank' },
-      { id: BANK_IDS.CIMB, name: 'CIMB Bank' },
-      { id: BANK_IDS.PUBLIC_BANK, name: 'Public Bank' },
-      { id: BANK_IDS.RHB_BANK, name: 'RHB Bank' },
-      { id: BANK_IDS.HONG_LEONG_BANK, name: 'Hong Leong Bank' },
-      { id: BANK_IDS.AMBANK, name: 'AmBank' },
-      { id: BANK_IDS.UOB, name: 'UOB Bank' },
-      { id: BANK_IDS.OCBC, name: 'OCBC Bank' },
-      { id: BANK_IDS.STANDARD_CHARTERED_BANK, name: 'Standard Chartered' },
-      { id: BANK_IDS.HSBC_BANK, name: 'HSBC Bank' },
-      { id: BANK_IDS.AFFIN_BANK, name: 'Affin Bank' },
-      { id: BANK_IDS.ALLIANCE_BANK, name: 'Alliance Bank' },
-      { id: BANK_IDS.BANK_ISLAM, name: 'Bank Islam' },
-      { id: BANK_IDS.BANK_RAKYAT, name: 'Bank Rakyat' },
-      { id: BANK_IDS.BSN, name: 'BSN' }
+      { id: 'AFFIN_BANK', name: 'Affin Bank' },
+      { id: 'AGROBANK', name: 'Agro Bank' },
+      { id: 'ALLIANCE', name: 'Alliance Bank' },
+      { id: 'AMBANK', name: 'Ambank' },
+      { id: 'BSN', name: 'BSN' },
+      { id: 'CIMB', name: 'CIMB Bank' },
+      { id: 'CITIBANK', name: 'Citibank' },
+      { id: 'HLB', name: 'Hong Leong Bank' },
+      { id: 'HSBC', name: 'HSBC Bank' },
+      { id: 'ISLAM_BANK', name: 'Bank Islam' },
+      { id: 'MAYBANK', name: 'Maybank' },
+      { id: 'MBSB', name: 'MBSB Bank' },
+      { id: 'MUAMALAT_BANK', name: 'Bank Muamalat' },
+      { id: 'OCBC', name: 'OCBC Bank' },
+      { id: 'PBE', name: 'Public Bank' },
+      { id: 'RAKYAT_BANK', name: 'Bank Rakyat' },
+      { id: 'RHB', name: 'RHB Bank' },
+      { id: 'SC_BANK', name: 'Standard Chartered Bank' },
+      { id: 'UOB', name: 'UOB Bank' }
     ];
     
     // New bank account form
@@ -423,12 +434,16 @@ export default defineComponent({
         
         // Load bank accounts and balance
         const memberDetails = await api.getMemberDetails();
+        const bankResponse = await api.getBankAccounts();
+        const bankData = (bankResponse as any)?.data || [];
         if (memberDetails) {
-          if (memberDetails.banks) {
-            bankAccounts.value = memberDetails.banks;
+          if (Array.isArray(bankData) && bankData.length > 0) {
+            bankAccounts.value = bankData;
             if (bankAccounts.value.length > 0) {
-              selectedBank.value = bankAccounts.value[0].iid || 0;
+              selectedBank.value = getAccountId(bankAccounts.value[0], 0);
             }
+          } else if (memberDetails.banks) {
+            bankAccounts.value = memberDetails.banks;
           }
           
           if (memberDetails.account && memberDetails.account.cash) {
@@ -471,7 +486,7 @@ export default defineComponent({
     const getMethodName = computed(() => {
       if (selectedWithdrawalMethod.value === 'bank') {
         if (selectedBank.value !== null && bankAccounts.value.length > 0) {
-          const account = bankAccounts.value.find(a => (a.iid || bankAccounts.value.indexOf(a)) === selectedBank.value);
+          const account = bankAccounts.value.find((a, index) => getAccountId(a, index) === selectedBank.value);
           if (account) {
             return `Bank Transfer (${getBankDisplayName(account)})`;
           }
@@ -566,7 +581,7 @@ export default defineComponent({
         
         // Process bank account creation
         const response = await api.createBankAccount({
-          bankid: parseInt(newBank.value.bankid),
+          bank: newBank.value.bankid,
           name: newBank.value.name,
           accountnumber: newBank.value.accountnumber
         });
@@ -599,12 +614,17 @@ export default defineComponent({
       try {
         isLoading.value = true;
         
-        // Load bank accounts
-        const memberDetails = await api.getMemberDetails();
-        if (memberDetails && memberDetails.banks) {
-          bankAccounts.value = memberDetails.banks;
+        const response = await api.getBankAccounts();
+        bankAccounts.value = (response as any)?.data || [];
+        if (bankAccounts.value.length > 0) {
+          selectedBank.value = getAccountId(bankAccounts.value[0], 0);
+        } else {
+          const memberDetails = await api.getMemberDetails();
+          if (memberDetails && memberDetails.banks) {
+            bankAccounts.value = memberDetails.banks;
+          }
           if (bankAccounts.value.length > 0) {
-            selectedBank.value = bankAccounts.value[0].iid || 0;
+            selectedBank.value = getAccountId(bankAccounts.value[0], 0);
           }
         }
       } catch (error) {
@@ -613,6 +633,47 @@ export default defineComponent({
       } finally {
         isLoading.value = false;
       }
+    };
+
+    const removeBankAccount = async (account: any, index = 0) => {
+      const bankId = getAccountId(account, index);
+
+      if (!bankId && bankId !== 0) {
+        toast.error('Unable to identify bank account');
+        return;
+      }
+
+      const result = await Swal.fire({
+        title: 'Remove Bank Account',
+        text: 'Are you sure you want to remove this bank account?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, remove it',
+        cancelButtonText: 'Cancel'
+      });
+
+      if (!result.isConfirmed) {
+        return;
+      }
+
+      try {
+        isLoading.value = true;
+        await api.deleteBankAccount(bankId);
+        toast.success('Bank account removed successfully');
+        await loadBankAccounts();
+      } catch (error: any) {
+        console.error('Failed to remove bank account:', error);
+        toast.error('Failed to remove bank account: ' + (error.message || 'Unknown error'));
+      } finally {
+        isLoading.value = false;
+      }
+    };
+
+    // Helper function to get bank display name
+    const getAccountId = (account: any, index = 0): any => {
+      return account?.bank_id || account?.id || account?.iid || index;
     };
 
     // Helper function to get bank display name
@@ -636,7 +697,10 @@ export default defineComponent({
       }
       
       // Check if account has bank name
-      if (account.bank) return account.bank;
+      if (account.bank) {
+        const bank = availableBanks.find(b => b.id === account.bank);
+        return bank?.name || account.bank;
+      }
       
       // Try to get bank name from bank ID if available
       if (account.bankid || account.iid) {
@@ -661,7 +725,7 @@ export default defineComponent({
       if (typeof account === 'string') {
         accountNumber = account;
       } else if (account) {
-        accountNumber = account.accountnumber || account.number || account.account_number || '';
+        accountNumber = account.account || account.accountnumber || account.number || account.account_number || '';
       }
       
       if (!accountNumber) return 'Account Number Not Available';
@@ -690,6 +754,7 @@ export default defineComponent({
       console.log('Getting account holder for:', account);
       
       // Look for account holder name fields
+      if (account.owner) return account.owner;
       if (account.accountname) return account.accountname;
       if (account.account_name) return account.account_name;
       if (account.holder_name) return account.holder_name;
@@ -726,7 +791,9 @@ export default defineComponent({
       isFormValid,
       submitWithdrawal,
       handleAddBank,
+      removeBankAccount,
       availableBanks,
+      getAccountId,
       getBankDisplayName,
       formatAccountNumber,
       getAccountHolderName

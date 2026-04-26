@@ -29,22 +29,22 @@
           <div v-if="bankAccounts.length > 0" class="space-y-4">
             <div
               v-for="(account, index) in bankAccounts" 
-              :key="index"
+              :key="account.id || account.iid || account.bank_id || index"
               class="border rounded-lg p-4 hover:border-blue-300 transition-colors"
             >
               <div class="flex justify-between items-start">
                   <div>
                   <div class="flex items-center mb-2">
                     <i class="fas fa-university text-blue-500 mr-2"></i>
-                    <h4 class="font-semibold text-lg">{{ getBankName(account.bankid) }}</h4>
+                    <h4 class="font-semibold text-lg">{{ getBankName(account) }}</h4>
                     <span v-if="account.isPrimary" class="ml-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
                       Primary
                     </span>
                   </div>
-                  <p class="text-gray-600 mb-1">Account Holder: {{ account.name }}</p>
-                  <p class="text-gray-600 font-mono">{{ formatAccountNumber(account.accountnumber) }}</p>
+                  <p class="text-gray-600 mb-1">Account Holder: {{ getAccountHolder(account) }}</p>
+                  <p class="text-gray-600 font-mono">{{ formatAccountNumber(account) }}</p>
                   <p class="text-xs text-gray-500 mt-2">
-                    Added on {{ formatDate(account.datecreate) }}
+                    Added on {{ formatDate(account) }}
                   </p>
                 </div>
                 <div class="flex space-x-2">
@@ -116,15 +116,15 @@
               </label>
               <select 
                 id="bank-select" 
-                v-model="newBank.bankid" 
+                v-model="newBank.bank" 
                 class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               >
                 <option value="">Choose a bank</option>
                 <option 
                   v-for="bank in availableBanks" 
-                  :key="bank.id" 
-                  :value="bank.id"
+                  :key="bank.code" 
+                  :value="bank.code"
                 >
                   {{ bank.name }}
                 </option>
@@ -138,7 +138,7 @@
               </label>
               <input 
                 id="account-name" 
-                v-model="newBank.name" 
+                v-model="newBank.owner" 
                 type="text" 
                 class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                 placeholder="Enter your full name as on bank account"
@@ -154,7 +154,7 @@
               </label>
               <input 
                 id="account-number" 
-                v-model="newBank.accountnumber" 
+                v-model="newBank.account" 
                 type="text" 
                 class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                 placeholder="Enter account number"
@@ -196,7 +196,6 @@ import { laravelApi as api } from '@/services/laravelApi';
 import { useToast } from 'vue-toastification';
 import Swal from 'sweetalert2';
 import MemberCenter2 from './MemberCenter2.vue';
-import { BANK_IDS } from '@/utils/reference-ids';
 
 export default defineComponent({
   name: 'BankAccountsPage',
@@ -209,41 +208,50 @@ export default defineComponent({
     const bankAccounts = ref<any[]>([]);
     const showAddBankForm = ref(false);
     
-    // Available banks
     const availableBanks = [
-      { id: BANK_IDS.MAYBANK, name: 'Maybank' },
-      { id: BANK_IDS.CIMB, name: 'CIMB Bank' },
-      { id: BANK_IDS.PUBLIC_BANK, name: 'Public Bank' },
-      { id: BANK_IDS.RHB_BANK, name: 'RHB Bank' },
-      { id: BANK_IDS.HONG_LEONG_BANK, name: 'Hong Leong Bank' },
-      { id: BANK_IDS.AMBANK, name: 'AmBank' },
-      { id: BANK_IDS.UOB, name: 'UOB Bank' },
-      { id: BANK_IDS.OCBC, name: 'OCBC Bank' },
-      { id: BANK_IDS.STANDARD_CHARTERED_BANK, name: 'Standard Chartered' },
-      { id: BANK_IDS.HSBC_BANK, name: 'HSBC Bank' },
-      { id: BANK_IDS.AFFIN_BANK, name: 'Affin Bank' },
-      { id: BANK_IDS.ALLIANCE_BANK, name: 'Alliance Bank' },
-      { id: BANK_IDS.BANK_ISLAM, name: 'Bank Islam' },
-      { id: BANK_IDS.BANK_RAKYAT, name: 'Bank Rakyat' },
-      { id: BANK_IDS.BSN, name: 'BSN' }
+      { code: 'AFFIN_BANK', name: 'Affin Bank' },
+      { code: 'AGROBANK', name: 'Agro Bank' },
+      { code: 'ALLIANCE', name: 'Alliance Bank' },
+      { code: 'AMBANK', name: 'Ambank' },
+      { code: 'BSN', name: 'BSN' },
+      { code: 'CIMB', name: 'CIMB Bank' },
+      { code: 'CITIBANK', name: 'Citibank' },
+      { code: 'HLB', name: 'Hong Leong Bank' },
+      { code: 'HSBC', name: 'HSBC Bank' },
+      { code: 'ISLAM_BANK', name: 'Bank Islam' },
+      { code: 'MAYBANK', name: 'Maybank' },
+      { code: 'MBSB', name: 'MBSB Bank' },
+      { code: 'MUAMALAT_BANK', name: 'Bank Muamalat' },
+      { code: 'OCBC', name: 'OCBC Bank' },
+      { code: 'PBE', name: 'Public Bank' },
+      { code: 'RAKYAT_BANK', name: 'Bank Rakyat' },
+      { code: 'RHB', name: 'RHB Bank' },
+      { code: 'SC_BANK', name: 'Standard Chartered Bank' },
+      { code: 'UOB', name: 'UOB Bank' }
     ];
     
     // New bank account form
     const newBank = ref({
-      bankid: '',
-      name: '',
-      accountnumber: ''
+      bank: '',
+      owner: '',
+      account: ''
     });
+
+    const extractBankAccounts = (response: any): any[] => {
+      const data = response?.data ?? response;
+      if (Array.isArray(data)) return data;
+      if (Array.isArray(data?.data)) return data.data;
+      if (Array.isArray(data?.banks)) return data.banks;
+      return [];
+    };
     
     // Load bank accounts
     const loadBankAccounts = async () => {
       try {
         isLoading.value = true;
         
-        const memberDetails = await api.getMemberDetails();
-        if (memberDetails && memberDetails.banks) {
-          bankAccounts.value = memberDetails.banks;
-        }
+        const response = await api.getBankAccounts();
+        bankAccounts.value = extractBankAccounts(response);
       } catch (error) {
         console.error('Failed to load bank accounts:', error);
         toast.error('Failed to load bank accounts');
@@ -258,16 +266,16 @@ export default defineComponent({
         isLoading.value = true;
         
         // Validate form
-        if (!newBank.value.bankid || !newBank.value.name || !newBank.value.accountnumber) {
+        if (!newBank.value.bank || !newBank.value.owner || !newBank.value.account) {
           toast.error('Please fill in all required fields');
         return;
       }
       
         // Process bank account creation
         const response = await api.createBankAccount({
-          bankid: parseInt(newBank.value.bankid),
-          name: newBank.value.name,
-          accountnumber: newBank.value.accountnumber
+          bank: newBank.value.bank,
+          owner: newBank.value.owner,
+          account: newBank.value.account
         });
         
         if (response && response.success) {
@@ -276,13 +284,12 @@ export default defineComponent({
           
           // Reset form
           newBank.value = {
-            bankid: '',
-            name: '',
-            accountnumber: ''
+            bank: '',
+            owner: '',
+            account: ''
           };
           
-          // Refresh bank accounts list if needed
-          // await loadBankAccounts();
+          await loadBankAccounts();
         }
       } catch (error: any) {
         console.error('Bank account creation error:', error);
@@ -313,13 +320,15 @@ export default defineComponent({
     };
     
     // Get bank name from ID
-    const getBankName = (bankId: number): string => {
-      const bank = availableBanks.find(b => b.id === bankId);
-      return bank ? bank.name : 'Unknown Bank';
+    const getBankName = (account: any): string => {
+      const bankCode = account?.bank || account?.bank_code || account?.shortname || account?.bankid;
+      const bank = availableBanks.find(b => b.code === bankCode);
+      return bank ? bank.name : account?.bank_name || account?.name || String(bankCode || 'Unknown Bank');
     };
     
     // Format account number for display
-    const formatAccountNumber = (accountNumber: string): string => {
+    const formatAccountNumber = (account: any): string => {
+      const accountNumber = String(account?.account || account?.accountnumber || account?.number || account?.account_number || '');
       if (!accountNumber) return '';
       
       // Mask middle digits for security
@@ -334,9 +343,15 @@ export default defineComponent({
     };
         
     // Format date
-    const formatDate = (dateObj: any): string => {
+    const formatDate = (account: any): string => {
+      const dateObj = account?.datecreate || account?.created_at;
+      if (typeof dateObj === 'string') return dateObj;
       if (!dateObj || !dateObj.datestring) return 'Unknown';
       return dateObj.datestring;
+    };
+
+    const getAccountHolder = (account: any): string => {
+      return account?.owner || account?.name || account?.accountname || account?.account_name || 'Account Holder';
     };
         
     // Set primary account
@@ -365,8 +380,15 @@ export default defineComponent({
         });
 
         if (result.isConfirmed) {
-          // This would need to be implemented in the API
-          toast.info('Remove account functionality would be implemented here');
+          const bankId = account.bank_id || account.id || account.iid;
+          if (!bankId) {
+            toast.error('Unable to identify bank account');
+            return;
+          }
+
+          await api.deleteBankAccount(bankId);
+          toast.success('Bank account removed successfully');
+          await loadBankAccounts();
         }
       } catch (error) {
         console.error('Failed to remove account:', error);
@@ -388,6 +410,7 @@ export default defineComponent({
       getBankName,
       formatAccountNumber,
       formatDate,
+      getAccountHolder,
       setPrimaryAccount,
       removeAccount
     };

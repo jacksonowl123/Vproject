@@ -79,9 +79,12 @@ interface CreateMemberPayload {
 }
 
 interface BankAccountPayload {
-  bankid: number;
-  name: string;
-  accountnumber: string;
+  bank?: string;
+  owner?: string;
+  account?: string;
+  bankid?: number | string;
+  name?: string;
+  accountnumber?: string;
 }
 
 interface LaunchGameResponse {
@@ -134,6 +137,67 @@ const LARAVEL_API_BASE_URL = resolveLaravelBaseUrl();
 // Use current origin for Vite dev server (works for any port)
 const VITE_DEV_SERVER_URL = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5175';
 const API_TIMEOUT = 30000; // 30 seconds
+
+const BANK_ID_TO_CODE: Record<number, string> = {
+  12: 'AFFIN_BANK',
+  13: 'AGROBANK',
+  14: 'ALLIANCE',
+  15: 'AMBANK',
+  16: 'ISLAM_BANK',
+  17: 'RAKYAT_BANK',
+  18: 'BSN',
+  19: 'CIMB',
+  20: 'CITIBANK',
+  21: 'HLB',
+  22: 'HSBC',
+  23: 'MAYBANK',
+  24: 'OCBC',
+  25: 'PBE',
+  26: 'RHB',
+  27: 'SC_BANK',
+  28: 'UOB',
+  31: 'MUAMALAT_BANK',
+};
+
+function normalizeBankAccountPayload(data: BankAccountPayload) {
+  const rawBank = data.bank ?? data.bankid;
+  const numericBank = typeof rawBank === 'number' ? rawBank : Number(rawBank);
+
+  return {
+    bank: data.bank ?? (Number.isFinite(numericBank) ? BANK_ID_TO_CODE[numericBank] : String(rawBank || '')),
+    owner: data.owner ?? data.name ?? '',
+    account: data.account ?? data.accountnumber ?? ''
+  };
+}
+
+function unwrapApiData(value: any): any {
+  if (value?.data !== undefined && (value?.success !== undefined || value?.message !== undefined)) {
+    return value.data;
+  }
+
+  return value;
+}
+
+function getValidStoredToken(action: string): string {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    throw new Error(`Please log in again before ${action}`);
+  }
+
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    if (payload?.exp && payload.exp * 1000 <= Date.now()) {
+      localStorage.removeItem('token');
+      throw new Error(`Your session has expired. Please log in again before ${action}`);
+    }
+  } catch (error: any) {
+    if (error?.message?.includes('session has expired')) {
+      throw error;
+    }
+  }
+
+  return token;
+}
 
 // Create axios instance for Laravel backend
 const laravelApiClient: AxiosInstance = axios.create({
@@ -550,15 +614,53 @@ export const laravelApi = {
   },
 
   /**
+   * Get current member bank accounts through Laravel backend
+   */
+  async getBankAccounts(): Promise<ApiResponse<any[]>> {
+    try {
+      getValidStoredToken('managing bank accounts');
+
+      const response = await laravelApiClient.get('/proxy/banks');
+      const data = unwrapApiData(response.data);
+      return {
+        success: true,
+        data: Array.isArray(data) ? data : []
+      };
+    } catch (error: any) {
+      console.error('Get bank accounts error:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || 'Failed to get bank accounts');
+    }
+  },
+
+  /**
    * Create bank account through Laravel backend
    */
   async createBankAccount(data: BankAccountPayload): Promise<ApiResponse<any>> {
     try {
-      const response = await laravelApiClient.post('/proxy/create-bank', data);
+      getValidStoredToken('adding a bank account');
+
+      const response = await laravelApiClient.post('/proxy/create-bank', normalizeBankAccountPayload(data));
       return response.data;
     } catch (error: any) {
       console.error('Create bank account error:', error.response?.data || error.message);
       throw new Error(error.response?.data?.message || 'Bank account creation failed');
+    }
+  },
+
+  /**
+   * Delete bank account through Laravel backend
+   */
+  async deleteBankAccount(bankId: number | string): Promise<ApiResponse<null>> {
+    try {
+      getValidStoredToken('deleting a bank account');
+
+      const response = await laravelApiClient.post('/proxy/delete-bank', {
+        bank_id: Number(bankId)
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('Delete bank account error:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || 'Bank account deletion failed');
     }
   },
 

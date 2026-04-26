@@ -80,7 +80,9 @@ Route::group(['prefix' => 'v1'], function () {
         
         // Bank account management
         Route::get('/banks/system', [ExternalApiController::class, 'getSystemBankAccounts']);
+        Route::get('/banks', [ExternalApiController::class, 'getBankAccounts']);
         Route::post('/banks/create', [ExternalApiController::class, 'createBankAccount']);
+        Route::post('/banks/delete', [ExternalApiController::class, 'deleteBankAccount']);
         
         // Incentives
         Route::get('/incentives', [ExternalApiController::class, 'getIncentives']);
@@ -123,7 +125,9 @@ Route::group(['prefix' => 'proxy'], function () {
     
     // Banks
     Route::get('/system-banks', [ExternalApiController::class, 'getSystemBankAccounts']);
+    Route::get('/banks', [ExternalApiController::class, 'getBankAccounts']);
     Route::post('/create-bank', [ExternalApiController::class, 'createBankAccount']);
+    Route::post('/delete-bank', [ExternalApiController::class, 'deleteBankAccount']);
     
     // Incentives and games
     Route::get('/incentives', [ExternalApiController::class, 'getIncentives']);

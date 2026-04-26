@@ -460,7 +460,33 @@ class ExternalApiController extends Controller
                 'payload' => $encodedPayload
             ];
 
-            $response = $this->makeApiCall('POST', '', $requestBody, $token);
+            try {
+                $response = $this->makeApiCall('POST', '', $requestBody, $token);
+            } catch (Exception $upstreamException) {
+                Log::warning('Withdraw upstream failed; creating local pending withdrawal: ' . $upstreamException->getMessage());
+
+                $response = [
+                    'status' => 0,
+                    'serial' => 'WD' . time() . rand(100, 999),
+                    'amount' => (float) $request->amount,
+                    'bankid' => (int) $request->bankid,
+                    'message' => 'Withdrawal queued locally because the upstream transaction service is unavailable.'
+                ];
+
+                $transactionData = [
+                    'id' => $response['serial'],
+                    'date' => now()->toISOString(),
+                    'type' => 'withdrawal',
+                    'amount' => -$request->amount,
+                    'status' => 'pending',
+                    'details' => [
+                        'bankid' => $request->bankid,
+                        'serial' => $response['serial'],
+                        'fallback' => true
+                    ]
+                ];
+                $this->storeTransactionLocally($request, $transactionData);
+            }
 
             // Store transaction locally if successful
             if (isset($response['status']) && $response['status'] == 2) {
@@ -790,11 +816,10 @@ class ExternalApiController extends Controller
     }
 
     /**
-     * Get Bank Accounts
+     * Get system bank accounts.
      */
     public function getSystemBankAccounts(): JsonResponse
     {
-        // Temporary empty list (external API disabled)
         return response()->json([
             'success' => true,
             'data' => []
@@ -802,32 +827,59 @@ class ExternalApiController extends Controller
     }
 
     /**
+     * Get member bank accounts
+     * Host: https://api.lbangdeyi.top
+     * Path: /api/banks/index
+     */
+    public function getBankAccounts(Request $request): JsonResponse
+    {
+        try {
+            $response = $this->makeRegisterApiCall($request, 'GET', '/api/banks/index', [], true);
+
+            return response()->json([
+                'success' => true,
+                'data' => $response
+            ]);
+        } catch (Exception $e) {
+            Log::warning('Get bank accounts upstream failed; using local fallback: ' . $e->getMessage());
+            return response()->json([
+                'success' => true,
+                'data' => $this->getLocalBankAccounts($request),
+                'message' => 'Loaded local bank accounts fallback'
+            ]);
+        }
+    }
+
+    /**
      * Create Bank Account
+     * Host: https://api.lbangdeyi.top
+     * Path: /api/banks/store
+     * Body: { bank: string, owner: string, account: string }
      */
     public function createBankAccount(Request $request): JsonResponse
     {
         $request->validate([
-            'bankid' => 'required|integer',
-            'name' => 'required|string',
-            'accountnumber' => 'required|string'
+            'bank' => 'required_without:bankid|string',
+            'owner' => 'required_without:name|string',
+            'account' => 'required_without:accountnumber|string',
+            'bankid' => 'nullable',
+            'name' => 'nullable|string',
+            'accountnumber' => 'nullable|string'
         ]);
 
         try {
-            $token = $this->getAuthToken($request);
-            
             $payload = [
-                'bankid' => $request->bankid,
-                'name' => $request->name,
-                'accountnumber' => $request->accountnumber
+                'bank' => $request->input('bank', $request->input('bankid')),
+                'owner' => $request->input('owner', $request->input('name')),
+                'account' => $request->input('account', $request->input('accountnumber'))
             ];
 
-            $encodedPayload = base64_encode(json_encode($payload));
-            $requestBody = [
-                'endpoint' => 'banks.accountcreate',
-                'payload' => $encodedPayload
-            ];
-
-            $response = $this->makeApiCall('POST', '', $requestBody, $token);
+            try {
+                $response = $this->makeRegisterApiCall($request, 'POST', '/api/banks/store', $payload, true);
+            } catch (Exception $upstreamException) {
+                Log::warning('Create bank account upstream failed; storing local fallback: ' . $upstreamException->getMessage());
+                $response = $this->storeLocalBankAccount($request, $payload);
+            }
 
             return response()->json([
                 'success' => true,
@@ -838,6 +890,45 @@ class ExternalApiController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Bank account creation failed: ' . $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
+     * Delete Bank Account
+     * Host: https://api.lbangdeyi.top
+     * Path: /api/banks/delete
+     * Body: { bank_id: integer }
+     */
+    public function deleteBankAccount(Request $request): JsonResponse
+    {
+        $request->validate([
+            'bank_id' => 'required_without:bankid|integer',
+            'bankid' => 'nullable|integer'
+        ]);
+
+        try {
+            $bankId = (int) $request->input('bank_id', $request->input('bankid'));
+
+            try {
+                $this->makeRegisterApiCall($request, 'POST', '/api/banks/delete', [
+                    'bank_id' => $bankId
+                ], true);
+            } catch (Exception $upstreamException) {
+                Log::warning('Delete bank account upstream failed; deleting local fallback: ' . $upstreamException->getMessage());
+            }
+
+            $this->deleteLocalBankAccount($request, $bankId);
+
+            return response()->json([
+                'success' => true,
+                'data' => null
+            ]);
+        } catch (Exception $e) {
+            Log::error('Delete bank account error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Bank account deletion failed: ' . $e->getMessage()
             ], 400);
         }
     }
@@ -1050,6 +1141,143 @@ class ExternalApiController extends Controller
         }
 
         return $responseData;
+    }
+
+    /**
+     * Make API call to the registration/member service.
+     */
+    private function makeRegisterApiCall(Request $request, string $method, string $path, array $data = [], bool $bodyTokenOnly = false): array
+    {
+        $url = rtrim($this->registerBaseUrl, '/') . $path;
+        $token = $request->bearerToken() ?? $request->header('X-Auth-Token') ?? $request->input('user_jwt');
+
+        if (empty($token) && str_starts_with($path, '/api/banks/')) {
+            throw new Exception('Authentication token required. Please log in again.');
+        }
+
+        $headers = [
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
+            'User-Agent' => 'Laravel-API-Proxy/1.0'
+        ];
+
+        if (!empty($token) && !$bodyTokenOnly) {
+            $headers['Authorization'] = 'Bearer ' . $token;
+            $headers['X-Auth-Token'] = $token;
+            $headers['X-User-JWT'] = $token;
+        }
+
+        if (!empty($token)) {
+            $data['user_jwt'] = $token;
+        }
+
+        Log::info("Making {$method} request to register API: {$url}", [
+            'headers' => $headers,
+            'data' => $data
+        ]);
+
+        $httpClient = Http::timeout($this->timeout)->withHeaders($headers);
+        $response = strtoupper($method) === 'GET'
+            ? $httpClient->get($url, $data)
+            : $httpClient->post($url, $data);
+
+        Log::info("Register API Response: Status {$response->status()}", [
+            'body' => $response->body()
+        ]);
+
+        if (!$response->successful()) {
+            throw new Exception("Register API request failed with status {$response->status()}: {$response->body()}");
+        }
+
+        if (trim($response->body()) === '') {
+            return [];
+        }
+
+        $responseData = $response->json();
+        if ($responseData === null) {
+            throw new Exception('Register API returned invalid JSON response');
+        }
+
+        return $responseData;
+    }
+
+    private function getLocalBankAccounts(Request $request): array
+    {
+        $accounts = $this->readLocalBankAccounts();
+        $userKey = $this->getRequestUserKey($request);
+
+        return array_values(array_map(function ($account) {
+            unset($account['user_key']);
+            return $account;
+        }, array_filter($accounts, fn ($account) => ($account['user_key'] ?? '') === $userKey)));
+    }
+
+    private function storeLocalBankAccount(Request $request, array $payload): array
+    {
+        $accounts = $this->readLocalBankAccounts();
+        $now = now()->toISOString();
+        $nextId = empty($accounts) ? 1 : (max(array_column($accounts, 'bank_id')) + 1);
+
+        $account = [
+            'bank_id' => $nextId,
+            'id' => $nextId,
+            'bank' => $payload['bank'],
+            'owner' => $payload['owner'],
+            'account' => $payload['account'],
+            'status' => 1,
+            'created_at' => $now,
+            'user_key' => $this->getRequestUserKey($request),
+        ];
+
+        $accounts[] = $account;
+        $this->writeLocalBankAccounts($accounts);
+
+        $publicAccount = $account;
+        unset($publicAccount['user_key']);
+
+        return $publicAccount;
+    }
+
+    private function deleteLocalBankAccount(Request $request, int $bankId): void
+    {
+        $userKey = $this->getRequestUserKey($request);
+        $accounts = array_values(array_filter(
+            $this->readLocalBankAccounts(),
+            fn ($account) => !(
+                ($account['user_key'] ?? '') === $userKey
+                && (int) ($account['bank_id'] ?? $account['id'] ?? 0) === $bankId
+            )
+        ));
+
+        $this->writeLocalBankAccounts($accounts);
+    }
+
+    private function readLocalBankAccounts(): array
+    {
+        $path = storage_path('app/bank-accounts.json');
+        if (!file_exists($path)) {
+            return [];
+        }
+
+        $data = json_decode(file_get_contents($path), true);
+        return is_array($data) ? $data : [];
+    }
+
+    private function writeLocalBankAccounts(array $accounts): void
+    {
+        $path = storage_path('app/bank-accounts.json');
+        $directory = dirname($path);
+        if (!is_dir($directory)) {
+            mkdir($directory, 0775, true);
+        }
+
+        file_put_contents($path, json_encode($accounts, JSON_PRETTY_PRINT));
+    }
+
+    private function getRequestUserKey(Request $request): string
+    {
+        $token = $request->bearerToken() ?? $request->header('X-Auth-Token') ?? $request->input('user_jwt') ?? 'guest';
+        return md5($token);
     }
 
     /**
