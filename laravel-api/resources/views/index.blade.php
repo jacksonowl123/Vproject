@@ -9,8 +9,8 @@
     />
     <link rel="icon" type="image/png" href="/logo.png" />
     <title>Elive</title>
-    <script type="module" crossorigin src="/assets/index-CpKPY-dZ.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-BGTn8kTQ.css">
+    <script type="module" crossorigin src="/assets/index-O1dsNjKf.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-Llhl-jOj.css">
   </head>
   <body>
     <div id="app"></div>
