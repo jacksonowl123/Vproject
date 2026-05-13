@@ -18,6 +18,10 @@ export default defineConfig({
         {
           src: 'dist/assets',
           dest: 'laravel-api/public/assets'
+        },
+        {
+          src: 'dist/logo.png',
+          dest: 'laravel-api/public'
         }
       ]
     })

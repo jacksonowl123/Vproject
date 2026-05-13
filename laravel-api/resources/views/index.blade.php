@@ -8,9 +8,9 @@
       content="width=device-width, initial-scale=1.0"
     />
     <link rel="icon" type="image/png" href="/logo.png" />
-    <title>Elive</title>
-    <script type="module" crossorigin src="/assets/index-O1dsNjKf.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-Llhl-jOj.css">
+    <title>LiftApp</title>
+    <script type="module" crossorigin src="/assets/index-D8YMQYZ0.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BGTn8kTQ.css">
   </head>
   <body>
     <div id="app"></div>
