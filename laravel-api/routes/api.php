@@ -46,6 +46,8 @@ Route::get('/proxy/external-api-info', function () {
 });
 
 // External API Proxy Routes
+Route::post('/members/store', [ExternalApiController::class, 'createMember']);
+
 Route::group(['prefix' => 'v1'], function () {
     
     // Connection testing
@@ -53,7 +55,7 @@ Route::group(['prefix' => 'v1'], function () {
     
     // Authentication routes (no auth required)
     Route::post('/auth/signin', [ExternalApiController::class, 'signIn']);
-    Route::post('/members/create', [ExternalApiController::class, 'createMember']);
+    Route::post('/members/store', [ExternalApiController::class, 'createMember']);
     
     // Protected routes (require authentication token)
     Route::group(['middleware' => 'api'], function () {
@@ -100,7 +102,7 @@ Route::group(['prefix' => 'proxy'], function () {
     
     // Authentication
     Route::post('/signin', [ExternalApiController::class, 'signIn']);
-    Route::post('/create-member', [ExternalApiController::class, 'createMember']);
+    Route::post('/members/store', [ExternalApiController::class, 'createMember']);
     
     // Member operations
     Route::get('/member-details', [ExternalApiController::class, 'getMemberDetails']);

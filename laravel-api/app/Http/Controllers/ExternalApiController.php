@@ -14,6 +14,7 @@ class ExternalApiController extends Controller
     private ?string $bearerToken;
     private int $timeout;
     private string $registerBaseUrl;
+    private ?string $registerBearerToken;
 
     public function __construct()
     {
@@ -22,6 +23,7 @@ class ExternalApiController extends Controller
         $this->timeout = 30; // 30 seconds timeout
         // Configurable via EXTERNAL_REGISTER_BASE_URL in .env file
         $this->registerBaseUrl = env('EXTERNAL_REGISTER_BASE_URL', 'https://api.lbangdeyi.top');
+        $this->registerBearerToken = env('EXTERNAL_REGISTER_BEARER_TOKEN', $this->bearerToken);
     }
 
     /**
@@ -99,7 +101,7 @@ class ExternalApiController extends Controller
     /**
      * Create Member (New API)
      * Host: https://api.lbangdeyi.top
-     * Path: /api/members/create
+     * Path: /api/members/store
      * Body: { usr: string, pwd: string, referral?: string(6) }
      */
     public function createMember(Request $request): JsonResponse
@@ -118,14 +120,35 @@ class ExternalApiController extends Controller
                 'referral' => $request->referral ?? env('REGISTER_REFERRAL_DEFAULT', 'MQBHNF')
             ];
 
-            $url = rtrim($this->registerBaseUrl, '/') . '/api/members/create';
+            $url = rtrim($this->registerBaseUrl, '/') . '/api/members/store';
+            $headers = [
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+                'User-Agent' => 'Laravel-API-Proxy/1.0',
+            ];
 
-            $response = Http::timeout($this->timeout)
-                ->withHeaders([
+            if (!empty($this->registerBearerToken)) {
+                $headers['Authorization'] = 'Bearer ' . $this->registerBearerToken;
+            }
+
+            Log::info('Create member outbound BO request', [
+                'method' => 'POST',
+                'url' => $url,
+                'headers' => [
                     'Content-Type' => 'application/json',
                     'Accept' => 'application/json',
-                    'User-Agent' => 'Laravel-API-Proxy/1.0'
-                ])
+                    'User-Agent' => 'Laravel-API-Proxy/1.0',
+                    'Authorization' => !empty($this->registerBearerToken) ? 'Bearer [redacted]' : null,
+                ],
+                'payload' => [
+                    'usr' => $payload['usr'],
+                    'pwd' => '[redacted]',
+                    'referral' => $payload['referral'],
+                ],
+            ]);
+
+            $response = Http::timeout($this->timeout)
+                ->withHeaders($headers)
                 ->post($url, $payload);
 
             if (!$response->successful()) {

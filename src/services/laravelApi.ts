@@ -321,7 +321,7 @@ export const laravelApi = {
    */
   async createMember(details: CreateMemberPayload): Promise<ApiResponse<any>> {
     try {
-      const response = await laravelApiClient.post('/proxy/create-member', details);
+      const response = await laravelApiClient.post('/members/store', details);
       return response.data;
     } catch (error: any) {
       console.error('Create member error:', error.response?.data || error.message);
