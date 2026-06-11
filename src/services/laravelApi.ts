@@ -102,6 +102,7 @@ interface LaunchGameResponse {
 
 interface Game {
   id: number;
+  platformId?: number;
   name: string;
   category: string;
   image: string;
@@ -839,7 +840,6 @@ export const laravelApi = {
     return [
       // Casino games
       { id: 1, name: 'Allbet', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Allbet') },
-      { id: 2, name: 'ASIAGAMING', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'ASIAGAMING') },
       { id: 4, name: 'Big Gaming', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Big Gaming') },
       { id: 6, name: 'Playtech', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Playtech') },
       { id: 11, name: 'Sexy Baccarat', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Sexy Baccarat') },
@@ -852,7 +852,7 @@ export const laravelApi = {
       { id: 8, name: 'Joker', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Joker') },
       { id: 9, name: 'Mega888', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Mega888') },
       { id: 10, name: '918Kiss', category: 'slots', image: getGameImage('slots', ++slotsIndex, '918Kiss') },
-      { id: 18, name: 'Spade Gaming', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Spade Gaming') },
+      { id: 18, platformId: 55, name: 'Spade Gaming', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Spade Gaming') },
       { id: 19, name: 'JILI', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'JILI') },
       
       // Sports games
@@ -862,8 +862,7 @@ export const laravelApi = {
       { id: 16, name: 'BC Sport', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'BC Sport') },
       { id: 21, name: 'IBC', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'IBC') },
       { id: 22, name: 'SBO', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'SBO') },
-      { id: 12, name: 'EBET', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'EBET') },
-      { id: 55, name: 'CMD', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'CMD') },
+      { id: 55, platformId: 19, name: 'CMD', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'CMD') },
     ];
   },
 

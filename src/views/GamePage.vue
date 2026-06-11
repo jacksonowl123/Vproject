@@ -102,7 +102,7 @@
                 {{ formatCategory(game.category) }}
               </span>
               <button 
-                @click="launchGame(game.id)" 
+                @click="launchGame(game.platformId ?? game.id)"
                 class="text-[#0066FF] hover:text-blue-700 font-medium text-sm flex items-center"
               >
                 Play <i class="fas fa-play-circle ml-1"></i>
@@ -112,7 +112,7 @@
           <!-- Play Button Overlay -->
           <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
             <button 
-              @click="launchGame(game.id)"
+              @click="launchGame(game.platformId ?? game.id)"
               class="bg-[#0066FF] hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition transform group-hover:scale-105"
             >
               <i class="fas fa-play mr-2"></i> Play Now

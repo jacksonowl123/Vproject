@@ -113,4 +113,4 @@ export const FTP_INFO = {
 // Commonly used incentive IDs
 export const INCENTIVE_IDS = {
   WELCOME_BONUS: 55
-}; 
+};
