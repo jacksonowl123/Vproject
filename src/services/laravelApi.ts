@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import { svgPlaceholder } from '@/assets';
+import { PLATFORM_IDS } from '@/utils/reference-ids';
 
 // Define a generic ApiResponse type
 interface ApiResponse<T = unknown> {
@@ -102,7 +103,7 @@ interface LaunchGameResponse {
 
 interface Game {
   id: number;
-  platformId?: number;
+  mobileOnly?: boolean;
   name: string;
   category: string;
   image: string;
@@ -839,30 +840,30 @@ export const laravelApi = {
     
     return [
       // Casino games
-      { id: 1, name: 'Allbet', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Allbet') },
-      { id: 4, name: 'Big Gaming', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Big Gaming') },
-      { id: 6, name: 'Playtech', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Playtech') },
-      { id: 11, name: 'Sexy Baccarat', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Sexy Baccarat') },
-      { id: 20, name: 'Lion King', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Lion King') },
+      { id: PLATFORM_IDS.ALLBET, name: 'Allbet', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Allbet') },
+      { id: PLATFORM_IDS.BIG_GAMING, name: 'Big Gaming', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Big Gaming') },
+      { id: PLATFORM_IDS.PLAYTECH, name: 'Playtech', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Playtech') },
+      { id: PLATFORM_IDS.SEXY_BACCARAT, name: 'Sexy Baccarat', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Sexy Baccarat') },
+      { id: PLATFORM_IDS.LION_KING, name: 'Lion King', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Lion King') },
       
       // Slots games
-      { id: 3, name: 'Microgaming', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Microgaming') },
-      { id: 5, name: 'Pragmatic', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Pragmatic') },
-      { id: 7, name: 'Pussy888', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Pussy888') },
-      { id: 8, name: 'Joker', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Joker') },
-      { id: 9, name: 'Mega888', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Mega888') },
-      { id: 10, name: '918Kiss', category: 'slots', image: getGameImage('slots', ++slotsIndex, '918Kiss') },
-      { id: 18, platformId: 55, name: 'Spade Gaming', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Spade Gaming') },
-      { id: 19, name: 'JILI', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'JILI') },
+      { id: PLATFORM_IDS.MICROGAMING, name: 'Microgaming', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Microgaming') },
+      { id: PLATFORM_IDS.PRAGMATIC, name: 'Pragmatic', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Pragmatic') },
+      { id: PLATFORM_IDS.PUSSY888, mobileOnly: true, name: 'Pussy888', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Pussy888') },
+      { id: PLATFORM_IDS.JOKER, name: 'Joker', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Joker') },
+      { id: PLATFORM_IDS.MEGA888, mobileOnly: true, name: 'Mega888', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Mega888') },
+      { id: PLATFORM_IDS.KISS_918, mobileOnly: true, name: '918Kiss', category: 'slots', image: getGameImage('slots', ++slotsIndex, '918Kiss') },
+      { id: PLATFORM_IDS.SPADE_GAMING, name: 'Spade Gaming', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Spade Gaming') },
+      { id: PLATFORM_IDS.JILI, name: 'JILI', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'JILI') },
       
       // Sports games
-      { id: 13, name: 'M8 Sport', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'M8 Sport') },
-      { id: 14, name: 'I1 Sport', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'I1 Sport') },
-      { id: 15, name: 'WS Sport', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'WS Sport') },
-      { id: 16, name: 'BC Sport', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'BC Sport') },
-      { id: 21, name: 'IBC', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'IBC') },
-      { id: 22, name: 'SBO', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'SBO') },
-      { id: 55, platformId: 19, name: 'CMD', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'CMD') },
+      { id: PLATFORM_IDS.M8_SPORT, name: 'M8 Sport', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'M8 Sport') },
+      { id: PLATFORM_IDS.I1_SPORT, name: 'I1 Sport', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'I1 Sport') },
+      { id: PLATFORM_IDS.WS_SPORT, name: 'WS Sport', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'WS Sport') },
+      { id: PLATFORM_IDS.BC_SPORT, name: 'BC Sport', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'BC Sport') },
+      { id: PLATFORM_IDS.IBC, name: 'IBC', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'IBC') },
+      { id: PLATFORM_IDS.SBO, name: 'SBO', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'SBO') },
+      { id: PLATFORM_IDS.CMD, name: 'CMD', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'CMD') },
     ];
   },
 
