@@ -19,7 +19,7 @@
       </button>
 
       <!-- Logo - Show on both mobile and desktop -->
-      <img :src="dummyImages.logo" alt="LiftApp" class="h-10 ml-3 md:h-12 md:ml-0">
+      <img :src="dummyImages.logo" alt="Elive" class="h-10 ml-3 md:h-12 md:ml-0">
     </div>
 
     <!-- Right section -->

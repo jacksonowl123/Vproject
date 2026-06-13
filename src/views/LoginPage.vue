@@ -6,7 +6,7 @@
       <div class="max-w-md mx-auto w-full">
         <!-- Logo -->
         <div class="mb-8">
-          <img :src="dummyImages.logo" alt="LiftApp" class="h-12">
+          <img :src="dummyImages.logo" alt="Elive" class="h-12">
           <h1 class="text-2xl font-bold text-[#0066FF] mt-4">Welcome Back</h1>
         </div>
 
@@ -181,20 +181,6 @@
         </p>
       </div>
 
-      <!-- Guide Section -->
-      <div class="mt-8">
-        <h2 class="text-lg font-bold mb-4">KK8 Login: A Comprehensive Guide</h2>
-        <p class="text-gray-600">
-          KK8 is a <span class="text-blue-600">trusted online casino</span> platform that is suitable for all kinds of players. It offers a wide variety of games, including slots, table games, live dealer games, and sports betting. Let's login KK8 account now to enjoy all the casino games.
-        </p>
-        <a href="#" class="text-blue-600 mt-2 inline-block">Read more ></a>
-      </div>
-
-      <div class="mt-4 flex justify-end">
-        <router-link to="/api-test" class="text-xs text-gray-500 hover:text-blue-500">
-          Test API Connection
-        </router-link>
-      </div>
     </div>
 
     <!-- Mobile Footer -->

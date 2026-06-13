@@ -8,11 +8,11 @@
       content="width=device-width, initial-scale=1.0"
     />
     <link rel="icon" type="image/png" href="/logo.png" />
-    <title>LiftApp</title>
-    <script type="module" crossorigin src="/assets/index-CKzil3-X.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-BYX0s6LL.css">
+    <title>Elive</title>
+    <script type="module" crossorigin src="/assets/index-BvyN9jUc.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-YpZH0VCn.css">
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app"></div>
   </body>
 </html>

@@ -306,8 +306,6 @@ export default defineComponent({
 
     // Launch game
     async function launchGame(platformId: number) {
-      let gameWindow: Window | null = null;
-
       try {
         // Check if user is logged in
         if (!authState.isLoggedIn) {
@@ -326,8 +324,6 @@ export default defineComponent({
           });
           return;
         }
-
-        gameWindow = window.open('about:blank', 'gameLaunchWindow');
 
         // Use new API: launch by platformId (no mapping)
 
@@ -348,21 +344,17 @@ export default defineComponent({
         if (launchUrl) {
           Swal.close();
 
-          if (gameWindow && !gameWindow.closed) {
-            gameWindow.location.href = launchUrl;
-            gameWindow.focus();
-          } else {
+          const gameWindow = window.open(launchUrl, 'gameLaunchWindow');
+          if (!gameWindow) {
             throw new Error('Please allow pop-ups to launch the game.');
           }
+          gameWindow.focus();
         } else {
           Swal.close();
           throw new Error('Game URL not available');
         }
       } catch (error: any) {
         console.error('Error launching game:', error);
-        if (gameWindow && !gameWindow.closed && gameWindow.location.href === 'about:blank') {
-          gameWindow.close();
-        }
         Swal.close(); // Make sure to close loading dialog on error
         Swal.fire({
           icon: 'error',
