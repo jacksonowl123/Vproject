@@ -9,8 +9,8 @@
     />
     <link rel="icon" type="image/png" href="/logo.png" />
     <title>LiftApp</title>
-    <script type="module" crossorigin src="/assets/index-B-3N1OPe.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-BGTn8kTQ.css">
+    <script type="module" crossorigin src="/assets/index-CKzil3-X.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BYX0s6LL.css">
   </head>
   <body>
     <div id="app"></div>
