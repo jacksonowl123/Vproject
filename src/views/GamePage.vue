@@ -306,6 +306,8 @@ export default defineComponent({
 
     // Launch game
     async function launchGame(platformId: number) {
+      let gameWindow: Window | null = null;
+
       try {
         // Check if user is logged in
         if (!authState.isLoggedIn) {
@@ -324,6 +326,9 @@ export default defineComponent({
           });
           return;
         }
+
+        gameWindow = window.open('about:blank', '_blank');
+
         // Use new API: launch by platformId (no mapping)
 
         // Show loading
@@ -341,39 +346,16 @@ export default defineComponent({
 
         const launchUrl = (response as any)?.url || (response as any)?.launch?.Url;
         if (launchUrl) {
-          // For mobile: Must open URL immediately while still in user gesture context
-          // Don't close dialog yet - open URL first
-          
-          // Method 1: window.open (try this first as it's more reliable)
-          let gameWindow: Window | null = null;
-          try {
-            gameWindow = window.open(launchUrl, '_blank', 'noopener,noreferrer');
-          if (gameWindow) {
+          if (gameWindow && !gameWindow.closed) {
+            gameWindow.location.href = launchUrl;
             gameWindow.focus();
+          } else {
+            const link = document.createElement('a');
+            link.href = launchUrl;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.click();
           }
-          } catch (e) {
-            console.log('window.open failed:', e);
-          }
-          
-          // Method 2: Anchor click (backup method, more reliable on some mobile browsers)
-          // Do this synchronously to maintain user gesture context
-          const link = document.createElement('a');
-          link.href = launchUrl;
-          link.target = '_blank';
-          link.rel = 'noopener noreferrer';
-          link.style.display = 'none';
-          
-          document.body.appendChild(link);
-          
-          // Click immediately (synchronous - critical for mobile)
-          link.click();
-          
-          // Clean up after a short delay
-          setTimeout(() => {
-            if (document.body.contains(link)) {
-              document.body.removeChild(link);
-            }
-          }, 100);
           
           // Close loading dialog after opening URL
           Swal.close();
@@ -383,6 +365,9 @@ export default defineComponent({
         }
       } catch (error: any) {
         console.error('Error launching game:', error);
+        if (gameWindow && !gameWindow.closed && gameWindow.location.href === 'about:blank') {
+          gameWindow.close();
+        }
         Swal.close(); // Make sure to close loading dialog on error
         Swal.fire({
           icon: 'error',
