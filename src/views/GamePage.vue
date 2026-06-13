@@ -327,7 +327,7 @@ export default defineComponent({
           return;
         }
 
-        gameWindow = window.open('about:blank', '_blank');
+        gameWindow = window.open('about:blank', 'gameLaunchWindow');
 
         // Use new API: launch by platformId (no mapping)
 
@@ -346,19 +346,14 @@ export default defineComponent({
 
         const launchUrl = (response as any)?.url || (response as any)?.launch?.Url;
         if (launchUrl) {
+          Swal.close();
+
           if (gameWindow && !gameWindow.closed) {
             gameWindow.location.href = launchUrl;
             gameWindow.focus();
           } else {
-            const link = document.createElement('a');
-            link.href = launchUrl;
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer';
-            link.click();
+            throw new Error('Please allow pop-ups to launch the game.');
           }
-          
-          // Close loading dialog after opening URL
-          Swal.close();
         } else {
           Swal.close();
           throw new Error('Game URL not available');

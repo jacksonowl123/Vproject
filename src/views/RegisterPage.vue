@@ -14,7 +14,7 @@
             <input 
               type="text" 
               v-model="username" 
-              placeholder="Username"
+              placeholder="Phone Number"
               class="w-full px-4 py-3 bg-white text-gray-900 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder-gray-400"
               required
             />

@@ -1,5 +1,6 @@
 import { reactive } from 'vue';
 import { laravelApi as api } from '@/services/laravelApi';
+import { AUTH_SESSION_EXPIRED_EVENT, isTokenExpired } from '@/utils/auth-session';
 
 interface BankAccount {
   bank: string;
@@ -43,6 +44,18 @@ export const authState = reactive<AuthState>({
   username: '',
   memberDetails: null
 });
+
+if (typeof window !== 'undefined') {
+  window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, () => {
+    authState.isLoggedIn = false;
+    authState.username = '';
+    authState.memberDetails = null;
+
+    if (window.location.pathname !== '/') {
+      window.location.replace('/');
+    }
+  });
+}
 
 export function setLoginState(isLoggedIn: boolean, username: string = '', token?: string) {
   console.log('Setting login state:', { isLoggedIn, username, hasToken: !!token });
@@ -102,7 +115,7 @@ export function checkLoginStatus(): boolean {
   
   console.log('Checking login status:', { hasToken: !!token, username });
   
-  if (token) {
+  if (token && !isTokenExpired(token)) {
     authState.isLoggedIn = true;
     authState.username = username || '';
     
@@ -116,6 +129,8 @@ export function checkLoginStatus(): boolean {
     
     return true;
   } else {
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
     authState.isLoggedIn = false;
     authState.username = '';
     authState.memberDetails = null;
@@ -142,4 +157,4 @@ export async function verifySession() {
 
 export function updateMemberDetails(details: MemberDetails) {
   authState.memberDetails = details;
-} 
+}

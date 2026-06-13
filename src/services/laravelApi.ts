@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { svgPlaceholder } from '@/assets';
 import { PLATFORM_IDS } from '@/utils/reference-ids';
+import { expireSession, isAuthenticationError, isTokenExpired } from '@/utils/auth-session';
 
 // Define a generic ApiResponse type
 interface ApiResponse<T = unknown> {
@@ -186,19 +187,37 @@ function getValidStoredToken(action: string): string {
     throw new Error(`Please log in again before ${action}`);
   }
 
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-    if (payload?.exp && payload.exp * 1000 <= Date.now()) {
-      localStorage.removeItem('token');
-      throw new Error(`Your session has expired. Please log in again before ${action}`);
-    }
-  } catch (error: any) {
-    if (error?.message?.includes('session has expired')) {
-      throw error;
-    }
+  if (isTokenExpired(token)) {
+    expireSession();
+    throw new Error(`Your session has expired. Please log in again before ${action}`);
   }
 
   return token;
+}
+
+function applyAuthToken(config: any) {
+  const token = localStorage.getItem('token');
+
+  if (token && isTokenExpired(token)) {
+    expireSession();
+    return Promise.reject(new Error('Your session has expired. Please log in again.'));
+  }
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+}
+
+function handleApiError(error: any, source: string) {
+  console.error(`${source} API Error:`, error.response?.data || error.message);
+
+  if (localStorage.getItem('token') && isAuthenticationError(error)) {
+    expireSession();
+  }
+
+  return Promise.reject(error);
 }
 
 // Create axios instance for Laravel backend
@@ -223,13 +242,7 @@ const viteProxyClient: AxiosInstance = axios.create({
 
 // Add request interceptor to add auth token to requests
 laravelApiClient.interceptors.request.use(
-  config => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
+  applyAuthToken,
   error => {
     return Promise.reject(error);
   }
@@ -238,21 +251,12 @@ laravelApiClient.interceptors.request.use(
 // Add response interceptor for error handling
 laravelApiClient.interceptors.response.use(
   response => response,
-  error => {
-    console.error('Laravel API Error:', error.response?.data || error.message);
-    return Promise.reject(error);
-  }
+  error => handleApiError(error, 'Laravel')
 );
 
 // Add request interceptor to add auth token to Vite proxy requests
 viteProxyClient.interceptors.request.use(
-  config => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
+  applyAuthToken,
   error => {
     return Promise.reject(error);
   }
@@ -261,10 +265,7 @@ viteProxyClient.interceptors.request.use(
 // Add response interceptor for Vite proxy error handling
 viteProxyClient.interceptors.response.use(
   response => response,
-  error => {
-    console.error('Vite Proxy API Error:', error.response?.data || error.message);
-    return Promise.reject(error);
-  }
+  error => handleApiError(error, 'Vite Proxy')
 );
 
 export const laravelApi = {
