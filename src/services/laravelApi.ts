@@ -694,10 +694,12 @@ export const laravelApi = {
   async launchGame(platformId: number): Promise<{ url: string | null }> {
     try {
       const userAgent = navigator.userAgent;
+      const userAgentDataMobile =
+        (navigator as Navigator & { userAgentData?: { mobile?: boolean } }).userAgentData?.mobile === true;
       const isMobileDevice =
+        userAgentDataMobile ||
         /Android|iPhone|iPad|iPod|IEMobile|Opera Mini/i.test(userAgent) ||
-        (/Macintosh/i.test(userAgent) && navigator.maxTouchPoints > 1) ||
-        window.matchMedia('(max-width: 1024px) and (pointer: coarse)').matches;
+        (/Macintosh/i.test(userAgent) && navigator.maxTouchPoints > 1);
       const view = isMobileDevice ? 'h5' : 'desktop';
 
       console.log('Launching game view:', view);
@@ -863,7 +865,6 @@ export const laravelApi = {
       { id: PLATFORM_IDS.BIG_GAMING, name: 'Big Gaming', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Big Gaming') },
       { id: PLATFORM_IDS.PLAYTECH, name: 'Playtech', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Playtech') },
       { id: PLATFORM_IDS.SEXY_BACCARAT, name: 'Sexy Baccarat', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Sexy Baccarat') },
-      { id: PLATFORM_IDS.LION_KING, name: 'Lion King', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Lion King') },
       
       // Slots games
       { id: PLATFORM_IDS.MICROGAMING, name: 'Microgaming', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Microgaming') },
@@ -872,6 +873,7 @@ export const laravelApi = {
       { id: PLATFORM_IDS.JOKER, name: 'Joker', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Joker') },
       { id: PLATFORM_IDS.MEGA888, mobileOnly: true, name: 'Mega888', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Mega888') },
       { id: PLATFORM_IDS.KISS_918, mobileOnly: true, name: '918Kiss', category: 'slots', image: getGameImage('slots', ++slotsIndex, '918Kiss') },
+      { id: PLATFORM_IDS.LION_KING, mobileOnly: true, name: 'Lion King', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Lion King') },
       { id: PLATFORM_IDS.JILI, name: 'JILI', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'JILI') },
     ];
   },
