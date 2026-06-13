@@ -693,7 +693,14 @@ export const laravelApi = {
    */
   async launchGame(platformId: number): Promise<{ url: string | null }> {
     try {
-      const view = window.matchMedia('(max-width: 767px)').matches ? 'h5' : 'desktop';
+      const userAgent = navigator.userAgent;
+      const isMobileDevice =
+        /Android|iPhone|iPad|iPod|IEMobile|Opera Mini/i.test(userAgent) ||
+        (/Macintosh/i.test(userAgent) && navigator.maxTouchPoints > 1) ||
+        window.matchMedia('(max-width: 1024px) and (pointer: coarse)').matches;
+      const view = isMobileDevice ? 'h5' : 'desktop';
+
+      console.log('Launching game view:', view);
       const response = await laravelApiClient.post('/proxy/launch-game', {
         platformid: platformId,
         view
@@ -865,7 +872,6 @@ export const laravelApi = {
       { id: PLATFORM_IDS.JOKER, name: 'Joker', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Joker') },
       { id: PLATFORM_IDS.MEGA888, mobileOnly: true, name: 'Mega888', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Mega888') },
       { id: PLATFORM_IDS.KISS_918, mobileOnly: true, name: '918Kiss', category: 'slots', image: getGameImage('slots', ++slotsIndex, '918Kiss') },
-      { id: PLATFORM_IDS.SPADE_GAMING, name: 'Spade Gaming', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Spade Gaming') },
       { id: PLATFORM_IDS.JILI, name: 'JILI', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'JILI') },
     ];
   },

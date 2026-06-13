@@ -1006,7 +1006,11 @@ class ExternalApiController extends Controller
             $lastBody = '';
             foreach ($candidatePaths as $path) {
                 $url = $base . $path;
-                Log::info('Launch game: trying upstream URL', ['url' => $url]);
+                Log::info('Launch game: trying upstream URL', [
+                    'url' => $url,
+                    'platformid' => (int) $request->platformid,
+                    'view' => $request->view
+                ]);
                 $payload = [
                     'platformid' => (int) $request->platformid,
                     'view' => $request->view,
