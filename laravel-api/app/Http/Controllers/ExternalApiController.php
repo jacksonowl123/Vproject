@@ -972,13 +972,14 @@ class ExternalApiController extends Controller
      * Launch Game (New API)
      * Host: https://api.lbangdeyi.top
      * Path: /api/platform/launch
-     * Body: { platformid: int }
+     * Body: { platformid: int, view: "h5"|"desktop" }
      * Response: { url: string }
      */
     public function launchGame(Request $request): JsonResponse
     {
         $request->validate([
-            'platformid' => 'required|integer'
+            'platformid' => 'required|integer',
+            'view' => 'required|string|in:h5,desktop'
         ]);
 
         try {
@@ -1006,7 +1007,11 @@ class ExternalApiController extends Controller
             foreach ($candidatePaths as $path) {
                 $url = $base . $path;
                 Log::info('Launch game: trying upstream URL', ['url' => $url]);
-                $payload = [ 'platformid' => (int) $request->platformid, 'user_jwt' => $token ];
+                $payload = [
+                    'platformid' => (int) $request->platformid,
+                    'view' => $request->view,
+                    'user_jwt' => $token
+                ];
                 $upstream = Http::timeout($this->timeout)
                     ->withHeaders($headers)
                     ->post($url, $payload);

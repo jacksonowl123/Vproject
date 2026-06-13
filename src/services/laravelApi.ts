@@ -693,8 +693,10 @@ export const laravelApi = {
    */
   async launchGame(platformId: number): Promise<{ url: string | null }> {
     try {
+      const view = window.matchMedia('(max-width: 767px)').matches ? 'h5' : 'desktop';
       const response = await laravelApiClient.post('/proxy/launch-game', {
-        platformid: platformId
+        platformid: platformId,
+        view
       });
 
       if (response.data.success) {
@@ -840,6 +842,15 @@ export const laravelApi = {
     let sportsIndex = 0;
     
     return [
+      // Sports games
+      { id: PLATFORM_IDS.M8_SPORT, name: 'M8 Sport', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'M8 Sport') },
+      { id: PLATFORM_IDS.I1_SPORT, name: 'I1 Sport', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'I1 Sport') },
+      { id: PLATFORM_IDS.WS_SPORT, name: 'WS Sport', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'WS Sport') },
+      { id: PLATFORM_IDS.BC_SPORT, name: 'BC Sport', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'BC Sport') },
+      { id: PLATFORM_IDS.IBC, name: 'IBC', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'IBC') },
+      { id: PLATFORM_IDS.SBO, name: 'SBO', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'SBO') },
+      { id: PLATFORM_IDS.CMD, name: 'CMD', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'CMD') },
+
       // Casino games
       { id: PLATFORM_IDS.ALLBET, name: 'Allbet', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Allbet') },
       { id: PLATFORM_IDS.BIG_GAMING, name: 'Big Gaming', category: 'casino', image: getGameImage('casino', ++casinoIndex, 'Big Gaming') },
@@ -856,15 +867,6 @@ export const laravelApi = {
       { id: PLATFORM_IDS.KISS_918, mobileOnly: true, name: '918Kiss', category: 'slots', image: getGameImage('slots', ++slotsIndex, '918Kiss') },
       { id: PLATFORM_IDS.SPADE_GAMING, name: 'Spade Gaming', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'Spade Gaming') },
       { id: PLATFORM_IDS.JILI, name: 'JILI', category: 'slots', image: getGameImage('slots', ++slotsIndex, 'JILI') },
-      
-      // Sports games
-      { id: PLATFORM_IDS.M8_SPORT, name: 'M8 Sport', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'M8 Sport') },
-      { id: PLATFORM_IDS.I1_SPORT, name: 'I1 Sport', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'I1 Sport') },
-      { id: PLATFORM_IDS.WS_SPORT, name: 'WS Sport', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'WS Sport') },
-      { id: PLATFORM_IDS.BC_SPORT, name: 'BC Sport', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'BC Sport') },
-      { id: PLATFORM_IDS.IBC, name: 'IBC', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'IBC') },
-      { id: PLATFORM_IDS.SBO, name: 'SBO', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'SBO') },
-      { id: PLATFORM_IDS.CMD, name: 'CMD', category: 'sports', image: getGameImage('sports', ++sportsIndex, 'CMD') },
     ];
   },
 
