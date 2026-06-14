@@ -351,7 +351,7 @@ export default defineComponent({
         name: 'GameLaunch',
         params: { platformId }
       });
-      const gameWindow = window.open(launchRoute.href, 'gameLaunchWindow');
+      const gameWindow = window.open(launchRoute.href, '_blank');
 
       if (!gameWindow) {
         router.push(launchRoute);
