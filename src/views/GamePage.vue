@@ -83,7 +83,6 @@
           v-for="game in displayedGames"
           :key="game.id"
           class="group relative rounded-xl overflow-hidden shadow-md transition transform hover:shadow-xl"
-          :class="{ 'md:hidden': game.mobileOnly }"
         >
           <div class="w-full game-card-aspect overflow-hidden bg-gray-100">
             <img
@@ -161,6 +160,7 @@ import Swal from 'sweetalert2';
 import { authState } from '@/store/auth';
 import UserBalanceDisplay from '../components/UserBalanceDisplay.vue';
 import { svgPlaceholder } from '@/assets';
+import { isMobileGame } from '@/utils/mobile-games';
 
 export default defineComponent({
   name: 'GamePage',
@@ -320,6 +320,29 @@ export default defineComponent({
           if (result.isConfirmed) {
             router.push('/login');
           }
+        });
+        return;
+      }
+
+      if (isMobileGame(platformId)) {
+        const isMobileDevice =
+          (navigator as Navigator & { userAgentData?: { mobile?: boolean } }).userAgentData?.mobile === true ||
+          /Android|iPhone|iPad|iPod|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+          (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+
+        if (!isMobileDevice) {
+          Swal.fire({
+            icon: 'info',
+            title: 'Mobile Game',
+            text: 'Please launch this game on mobile.',
+            confirmButtonColor: '#0066FF'
+          });
+          return;
+        }
+
+        router.push({
+          name: 'MobileGame',
+          params: { platformId }
         });
         return;
       }

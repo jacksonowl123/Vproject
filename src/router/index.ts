@@ -40,6 +40,12 @@ const routes = [
     meta: { standalone: true }
   },
   {
+    path: '/mobile-game/:platformId',
+    name: 'MobileGame',
+    component: () => import('../views/MobileGamePage.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/member',
     redirect: '/userProfile'
   },

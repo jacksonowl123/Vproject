@@ -691,7 +691,11 @@ export const laravelApi = {
   /**
    * Launch game through Laravel backend
    */
-  async launchGame(platformId: number): Promise<{ url: string | null; view: 'h5' | 'desktop' }> {
+  async launchGame(platformId: number): Promise<{
+    url: string | null;
+    view: 'h5' | 'desktop';
+    raw?: unknown;
+  }> {
     try {
       const userAgent = navigator.userAgent;
       const userAgentDataMobile =
@@ -710,7 +714,7 @@ export const laravelApi = {
 
       if (response.data.success) {
         return {
-          ...(response.data.data as { url: string | null }),
+          ...(response.data.data as { url: string | null; raw?: unknown }),
           view
         };
       }
