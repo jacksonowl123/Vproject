@@ -353,34 +353,6 @@ export default defineComponent({
         return;
       }
 
-      const requiresDirectLaunch = platformId === 1 || platformId === 6;
-
-      if (requiresDirectLaunch) {
-        try {
-          const response = await api.launchGame(platformId);
-          if (!response.url) {
-            throw new Error('Game URL not available.');
-          }
-
-          const launchUrl = normalizeLaunchUrl(response.url);
-          const gameWindow = window.open(launchUrl, '_blank');
-
-          if (gameWindow) {
-            gameWindow.focus();
-          } else {
-            window.location.assign(launchUrl);
-          }
-        } catch (error: any) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Unable to Launch Game',
-            text: error.message || 'Unable to launch game. Please try again.',
-            confirmButtonColor: '#0066FF'
-          });
-        }
-        return;
-      }
-
       const launchRoute = router.resolve({
         name: 'GameLaunch',
         params: { platformId },
