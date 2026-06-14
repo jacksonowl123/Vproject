@@ -691,7 +691,7 @@ export const laravelApi = {
   /**
    * Launch game through Laravel backend
    */
-  async launchGame(platformId: number): Promise<{ url: string | null }> {
+  async launchGame(platformId: number): Promise<{ url: string | null; view: 'h5' | 'desktop' }> {
     try {
       const userAgent = navigator.userAgent;
       const userAgentDataMobile =
@@ -709,7 +709,10 @@ export const laravelApi = {
       });
 
       if (response.data.success) {
-        return response.data.data as { url: string | null };
+        return {
+          ...(response.data.data as { url: string | null }),
+          view
+        };
       }
       throw new Error(response.data.message || 'Game launch failed');
     } catch (error: any) {

@@ -305,64 +305,37 @@ export default defineComponent({
     }
 
     // Launch game
-    async function launchGame(platformId: number) {
-      try {
-        // Check if user is logged in
-        if (!authState.isLoggedIn) {
-          Swal.fire({
-            title: 'Login Required',
-            text: 'Please log in to play this game',
-            icon: 'info',
-            confirmButtonColor: '#0066FF',
-            showCancelButton: true,
-            confirmButtonText: 'Login Now',
-            cancelButtonText: 'Cancel'
-          }).then((result) => {
-            if (result.isConfirmed) {
-              router.push('/login');
-            }
-          });
-          return;
-        }
-
-        // Use new API: launch by platformId (no mapping)
-
-        // Show loading
+    function launchGame(platformId: number) {
+      // Check if user is logged in
+      if (!authState.isLoggedIn) {
         Swal.fire({
-          title: 'Launching Game...',
-          text: 'Preparing your gaming experience',
-          allowOutsideClick: false,
-          didOpen: () => {
-            Swal.showLoading();
-          }
-        });
-
-        console.log(`Launching game for platform ID: ${platformId}`);
-        const response = await api.launchGame(platformId);
-
-        const launchUrl = (response as any)?.url || (response as any)?.launch?.Url;
-        if (launchUrl) {
-          Swal.close();
-
-          const gameWindow = window.open(launchUrl, 'gameLaunchWindow');
-          if (!gameWindow) {
-            throw new Error('Please allow pop-ups to launch the game.');
-          }
-          gameWindow.focus();
-        } else {
-          Swal.close();
-          throw new Error('Game URL not available');
-        }
-      } catch (error: any) {
-        console.error('Error launching game:', error);
-        Swal.close(); // Make sure to close loading dialog on error
-        Swal.fire({
-          icon: 'error',
-          title: 'Failed to Launch Game',
-          text: error.message || 'Unable to launch game. Please try again.',
+          title: 'Login Required',
+          text: 'Please log in to play this game',
+          icon: 'info',
           confirmButtonColor: '#0066FF',
+          showCancelButton: true,
+          confirmButtonText: 'Login Now',
+          cancelButtonText: 'Cancel'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            router.push('/login');
+          }
         });
+        return;
       }
+
+      const launchRoute = router.resolve({
+        name: 'GameLaunch',
+        params: { platformId }
+      });
+      const gameWindow = window.open(launchRoute.href, 'gameLaunchWindow');
+
+      if (!gameWindow) {
+        router.push(launchRoute);
+        return;
+      }
+
+      gameWindow.focus();
     }
 
     // Handle balance update

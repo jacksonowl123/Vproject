@@ -34,6 +34,12 @@ const routes = [
     component: GameDetailsPage,
   },
   {
+    path: '/launch-game/:platformId',
+    name: 'GameLaunch',
+    component: () => import('../views/GameLaunchPage.vue'),
+    meta: { standalone: true }
+  },
+  {
     path: '/member',
     redirect: '/userProfile'
   },

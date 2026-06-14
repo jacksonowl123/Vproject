@@ -1,5 +1,6 @@
 <template>
-  <div class="flex flex-col h-screen overflow-hidden">
+  <router-view v-if="isStandaloneRoute" />
+  <div v-else class="flex flex-col h-screen overflow-hidden">
     <header>
       <AppHeader
         @toggle-web-sidebar="toggleWebSidebar"
@@ -209,6 +210,8 @@ export default defineComponent({
       const routeName = route.name ? String(route.name) : '';
       return !['login', 'register'].includes(routeName);
     });
+
+    const isStandaloneRoute = computed(() => route.meta.standalone === true);
     
     const handleLogout = () => {      
       // Clear auth state
@@ -251,6 +254,7 @@ export default defineComponent({
       enableDevMode,
       showHeader,
       showFooter,
+      isStandaloneRoute,
       isWebSidebarOpen,
       isMobileSidebarOpen,
       toggleWebSidebar,
