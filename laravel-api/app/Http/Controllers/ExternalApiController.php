@@ -996,119 +996,37 @@ class ExternalApiController extends Controller
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
                 'User-Agent' => 'Laravel-API-Proxy/1.0',
-                'Cache-Control' => 'no-cache, no-store',
-                'Pragma' => 'no-cache',
                 'Authorization' => 'Bearer ' . $token,
                 'X-Auth-Token' => $token,
                 'X-User-JWT' => $token,
             ];
 
-            $platformId = (int) $request->platformid;
-            $requiresProviderInitialization = in_array($platformId, [1, 6], true);
-
-            if ($requiresProviderInitialization) {
-                $credentialsResponse = Http::timeout($this->timeout)
-                    ->withHeaders($headers)
-                    ->get($base . '/api/platforms/credentials');
-
-                Log::info('Launch game: provider credentials initialized', [
-                    'platformid' => $platformId,
-                    'status' => $credentialsResponse->status()
-                ]);
-            }
-
-            $extractLaunchUrl = static function ($responseJson): ?string {
-                if (!is_array($responseJson)) {
-                    return null;
-                }
-
-                $url = $responseJson['url']
-                    ?? ($responseJson['Url'] ?? null)
-                    ?? ($responseJson['launch']['Url'] ?? null)
-                    ?? ($responseJson['launch']['url'] ?? null)
-                    ?? ($responseJson['data']['url'] ?? null)
-                    ?? ($responseJson['data']['Url'] ?? null)
-                    ?? ($responseJson['data']['launch']['Url'] ?? null)
-                    ?? ($responseJson['data']['launch']['url'] ?? null)
-                    ?? ($responseJson['result']['url'] ?? null)
-                    ?? ($responseJson['result']['launch']['Url'] ?? null)
-                    ?? ($responseJson['redirect'] ?? null)
-                    ?? ($responseJson['redirect_url'] ?? null)
-                    ?? ($responseJson['launch_url'] ?? null);
-
-                if (!is_string($url)) {
-                    return null;
-                }
-
-                return html_entity_decode(
-                    trim($url, " \t\n\r\0\x0B\"'"),
-                    ENT_QUOTES | ENT_HTML5,
-                    'UTF-8'
-                );
-            };
-
-            $hasRequiredProviderSession = static function (?string $url, int $platformId): bool {
-                if (!$url) {
-                    return false;
-                }
-
-                parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
-
-                if ($platformId === 6) {
-                    return !empty($query['launch_alias']);
-                }
-
-                if ($platformId === 1) {
-                    return !empty($query['sessionId']);
-                }
-
-                return true;
-            };
-
             $json = null;
-            $launchUrl = null;
             $lastStatus = 0;
             $lastBody = '';
-            $maxAttempts = $requiresProviderInitialization ? 2 : 1;
-
-            for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
-                foreach ($candidatePaths as $path) {
-                    $url = $base . $path;
-                    Log::info('Launch game: trying upstream URL', [
-                        'url' => $url,
-                        'platformid' => $platformId,
-                        'view' => $request->view,
-                        'attempt' => $attempt
-                    ]);
-                    $payload = [
-                        'platformid' => $platformId,
-                        'view' => $request->view
-                    ];
-                    $upstream = Http::timeout($this->timeout)
-                        ->withHeaders($headers)
-                        ->post($url, $payload);
-                    $lastStatus = $upstream->status();
-                    $lastBody = $upstream->body();
-                    if ($upstream->successful()) {
-                        $json = $upstream->json();
-                        $launchUrl = $extractLaunchUrl($json);
-                        break;
-                    }
-                    if ($lastStatus !== 404) {
-                        break;
-                    }
-                }
-
-                if ($json !== null && $hasRequiredProviderSession($launchUrl, $platformId)) {
+            foreach ($candidatePaths as $path) {
+                $url = $base . $path;
+                Log::info('Launch game: trying upstream URL', [
+                    'url' => $url,
+                    'platformid' => (int) $request->platformid,
+                    'view' => $request->view
+                ]);
+                $payload = [
+                    'platformid' => (int) $request->platformid,
+                    'view' => $request->view,
+                    'user_jwt' => $token
+                ];
+                $upstream = Http::timeout($this->timeout)
+                    ->withHeaders($headers)
+                    ->post($url, $payload);
+                $lastStatus = $upstream->status();
+                $lastBody = $upstream->body();
+                if ($upstream->successful()) {
+                    $json = $upstream->json();
                     break;
                 }
-
-                if ($attempt < $maxAttempts) {
-                    Log::warning('Launch game: incomplete provider session, retrying', [
-                        'platformid' => $platformId,
-                        'view' => $request->view
-                    ]);
-                    usleep(250000);
+                if ($lastStatus !== 404) {
+                    break;
                 }
             }
 
@@ -1120,8 +1038,27 @@ class ExternalApiController extends Controller
                 throw new Exception('Launch game API returned invalid JSON response');
             }
 
-            if (!$hasRequiredProviderSession($launchUrl, $platformId)) {
-                throw new Exception("Launch game API returned an incomplete session for platform {$platformId}");
+            // Normalize to { url } from common shapes
+            $launchUrl = null;
+            if (is_array($json)) {
+                $launchUrl = $json['url']
+                    ?? ($json['Url'] ?? null)
+                    ?? ($json['launch']['Url'] ?? null)
+                    ?? ($json['launch']['url'] ?? null)
+                    ?? ($json['data']['url'] ?? null)
+                    ?? ($json['data']['Url'] ?? null)
+                    ?? ($json['data']['launch']['Url'] ?? null)
+                    ?? ($json['data']['launch']['url'] ?? null)
+                    ?? ($json['result']['url'] ?? null)
+                    ?? ($json['result']['launch']['Url'] ?? null)
+                    ?? ($json['redirect'] ?? null)
+                    ?? ($json['redirect_url'] ?? null)
+                    ?? ($json['launch_url'] ?? null);
+            }
+
+            if (is_string($launchUrl)) {
+                $launchUrl = trim($launchUrl, " \t\n\r\0\x0B\"'");
+                $launchUrl = html_entity_decode($launchUrl, ENT_QUOTES | ENT_HTML5, 'UTF-8');
             }
 
             $queryParameterNames = [];

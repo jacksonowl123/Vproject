@@ -41,6 +41,7 @@ import { laravelApi as api } from '@/services/laravelApi';
 
 const route = useRoute();
 const error = ref('');
+const isHandoff = route.query.mode === 'handoff';
 
 function normalizeLaunchUrl(url: string): string {
   const textarea = document.createElement('textarea');
@@ -77,5 +78,9 @@ function returnToGames() {
   }
 }
 
-onMounted(launch);
+onMounted(() => {
+  if (!isHandoff) {
+    launch();
+  }
+});
 </script>

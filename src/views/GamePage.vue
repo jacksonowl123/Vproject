@@ -304,8 +304,14 @@ export default defineComponent({
       img.onerror = null; // Prevent infinite loop
     }
 
+    function normalizeLaunchUrl(url: string): string {
+      const textarea = document.createElement('textarea');
+      textarea.innerHTML = url.trim().replace(/^['"]|['"]$/g, '');
+      return textarea.value;
+    }
+
     // Launch game
-    function launchGame(platformId: number) {
+    async function launchGame(platformId: number) {
       // Check if user is logged in
       if (!authState.isLoggedIn) {
         Swal.fire({
@@ -349,16 +355,37 @@ export default defineComponent({
 
       const launchRoute = router.resolve({
         name: 'GameLaunch',
-        params: { platformId }
+        params: { platformId },
+        query: { mode: 'handoff' }
       });
       const gameWindow = window.open(launchRoute.href, '_blank');
 
-      if (!gameWindow) {
-        router.push(launchRoute);
-        return;
-      }
+      try {
+        const response = await api.launchGame(platformId);
+        if (!response.url) {
+          throw new Error('Game URL not available.');
+        }
 
-      gameWindow.focus();
+        const launchUrl = normalizeLaunchUrl(response.url);
+
+        if (gameWindow && !gameWindow.closed) {
+          gameWindow.location.replace(launchUrl);
+          gameWindow.focus();
+        } else {
+          window.location.assign(launchUrl);
+        }
+      } catch (error: any) {
+        if (gameWindow && !gameWindow.closed) {
+          gameWindow.close();
+        }
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Unable to Launch Game',
+          text: error.message || 'Unable to launch game. Please try again.',
+          confirmButtonColor: '#0066FF'
+        });
+      }
     }
 
     // Handle balance update
