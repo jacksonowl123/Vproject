@@ -9,7 +9,7 @@
     />
     <link rel="icon" type="image/png" href="/logo.png" />
     <title>Elive</title>
-    <script type="module" crossorigin src="/assets/index-BICTUOn_.js"></script>
+    <script type="module" crossorigin src="/assets/index-CYVYskBa.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-CtsFm0oT.css">
   </head>
   <body>

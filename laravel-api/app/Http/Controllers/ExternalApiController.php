@@ -1056,7 +1056,29 @@ class ExternalApiController extends Controller
                     ?? ($json['launch_url'] ?? null);
             }
 
-            Log::info('Launch game upstream normalized URL', ['url' => $launchUrl]);
+            if (is_string($launchUrl)) {
+                $launchUrl = trim($launchUrl, " \t\n\r\0\x0B\"'");
+                $launchUrl = html_entity_decode($launchUrl, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            }
+
+            $queryParameterNames = [];
+            if (is_string($launchUrl)) {
+                $query = parse_url($launchUrl, PHP_URL_QUERY);
+                if (is_string($query)) {
+                    foreach (explode('&', $query) as $parameter) {
+                        $parameterName = explode('=', $parameter, 2)[0] ?? '';
+                        if ($parameterName !== '') {
+                            $queryParameterNames[] = urldecode($parameterName);
+                        }
+                    }
+                }
+            }
+
+            Log::info('Launch game upstream normalized URL', [
+                'platformid' => (int) $request->platformid,
+                'view' => $request->view,
+                'query_parameters' => $queryParameterNames
+            ]);
 
             return response()->json([
                 'success' => true,

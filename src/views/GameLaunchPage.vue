@@ -42,6 +42,12 @@ import { laravelApi as api } from '@/services/laravelApi';
 const route = useRoute();
 const error = ref('');
 
+function normalizeLaunchUrl(url: string): string {
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = url.trim().replace(/^['"]|['"]$/g, '');
+  return textarea.value;
+}
+
 async function launch() {
   error.value = '';
   const platformId = Number(route.params.platformId);
@@ -57,7 +63,7 @@ async function launch() {
       throw new Error('Game URL not available.');
     }
 
-    window.location.replace(response.url);
+    window.location.replace(normalizeLaunchUrl(response.url));
   } catch (launchError: any) {
     error.value = launchError.message || 'Unable to launch game. Please try again.';
   }
