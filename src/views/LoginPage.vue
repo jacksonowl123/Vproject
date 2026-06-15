@@ -13,7 +13,7 @@
         <!-- Login Form -->
         <div class="mb-6">
           <h2 class="text-xl font-semibold mb-2">Login</h2>
-          <p class="text-gray-600 mb-6">Log in to continue your experience with KK8 application.</p>
+          <p class="text-gray-600 mb-6">Log in to continue your experience with Elive.</p>
         </div>
 
         <form @submit.prevent="login">
@@ -124,7 +124,7 @@
     <!-- Login Form -->
     <div class="px-6 py-8">
       <h1 class="text-xl font-bold mb-2">Login</h1>
-      <p class="text-gray-600 mb-6">Log in to continue your experience with KK8 application.</p>
+      <p class="text-gray-600 mb-6">Log in to continue your experience with Elive.</p>
       
       <form @submit.prevent="login">
         <div v-if="error" class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-4 flex items-start">
