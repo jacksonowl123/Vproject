@@ -32,3 +32,7 @@ export const MOBILE_GAMES: Record<number, MobileGameConfig> = {
 export function isMobileGame(platformId: number): boolean {
   return Boolean(MOBILE_GAMES[platformId]);
 }
+
+export function getMobileGameLaunchStorageKey(platformId: number): string {
+  return `mobile-game-launch:${platformId}`;
+}

@@ -79,7 +79,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Swal from 'sweetalert2';
 import { laravelApi as api } from '@/services/laravelApi';
-import { MOBILE_GAMES } from '@/utils/mobile-games';
+import { getMobileGameLaunchStorageKey, MOBILE_GAMES } from '@/utils/mobile-games';
 
 const route = useRoute();
 const router = useRouter();
@@ -90,15 +90,11 @@ const password = ref('');
 const loading = ref(false);
 const error = ref('');
 
-async function loadCredentials() {
-  if (!game.value) return;
-
-  loading.value = true;
-  error.value = '';
-
-  try {
-    const response = await api.launchGame(platformId);
-
+function applyLaunchResponse(response: {
+  isapp?: boolean;
+  usr?: string;
+  pwd?: string;
+}) {
     if (!response.isapp) {
       username.value = '';
       password.value = '';
@@ -112,6 +108,33 @@ async function loadCredentials() {
     if (!username.value || !password.value) {
       error.value = 'The game provider did not return account credentials. Please contact support.';
     }
+}
+
+function consumePreparedLaunch() {
+  const storageKey = getMobileGameLaunchStorageKey(platformId);
+  const storedLaunch = sessionStorage.getItem(storageKey);
+
+  if (!storedLaunch) return false;
+
+  sessionStorage.removeItem(storageKey);
+
+  try {
+    applyLaunchResponse(JSON.parse(storedLaunch));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function loadCredentials() {
+  if (!game.value) return;
+
+  loading.value = true;
+  error.value = '';
+
+  try {
+    const response = await api.launchGame(platformId);
+    applyLaunchResponse(response);
   } catch (credentialError: any) {
     error.value = credentialError.message || 'Unable to load game credentials.';
   } finally {
@@ -129,5 +152,9 @@ async function copyText(value: string, label: string) {
   });
 }
 
-onMounted(loadCredentials);
+onMounted(() => {
+  if (!consumePreparedLaunch()) {
+    loadCredentials();
+  }
+});
 </script>

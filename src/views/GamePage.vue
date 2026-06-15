@@ -160,7 +160,7 @@ import Swal from 'sweetalert2';
 import { authState } from '@/store/auth';
 import UserBalanceDisplay from '../components/UserBalanceDisplay.vue';
 import { svgPlaceholder } from '@/assets';
-import { isMobileGame } from '@/utils/mobile-games';
+import { getMobileGameLaunchStorageKey, isMobileGame } from '@/utils/mobile-games';
 
 export default defineComponent({
   name: 'GamePage',
@@ -346,10 +346,38 @@ export default defineComponent({
           return;
         }
 
-        router.push({
-          name: 'MobileGame',
-          params: { platformId }
-        });
+        try {
+          Swal.fire({
+            title: 'Preparing Game Account',
+            text: 'Please wait while we prepare your app login.',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+          });
+
+          const response = await api.launchGame(platformId);
+          sessionStorage.setItem(
+            getMobileGameLaunchStorageKey(platformId),
+            JSON.stringify({
+              isapp: response.isapp,
+              usr: response.usr,
+              pwd: response.pwd,
+              url: response.url
+            })
+          );
+          Swal.close();
+
+          await router.push({
+            name: 'MobileGame',
+            params: { platformId }
+          });
+        } catch (error: any) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Unable to Prepare Game',
+            text: error.message || 'Unable to prepare the game account. Please try again.',
+            confirmButtonColor: '#0066FF'
+          });
+        }
         return;
       }
 
