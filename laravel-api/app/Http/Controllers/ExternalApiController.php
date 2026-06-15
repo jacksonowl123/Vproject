@@ -1061,13 +1061,45 @@ class ExternalApiController extends Controller
                 $launchUrl = html_entity_decode($launchUrl, ENT_QUOTES | ENT_HTML5, 'UTF-8');
             }
 
-            $isAppValue = is_array($json) ? ($json['isapp'] ?? false) : false;
+            $findResponseValue = null;
+            $findResponseValue = static function ($source, string $targetKey) use (&$findResponseValue) {
+                if (is_string($source)) {
+                    $decoded = json_decode($source, true);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        return $findResponseValue($decoded, $targetKey);
+                    }
+
+                    return null;
+                }
+
+                if (!is_array($source)) {
+                    return null;
+                }
+
+                foreach ($source as $key => $value) {
+                    $normalizedKey = strtolower(preg_replace('/[^a-z0-9]/i', '', (string) $key));
+                    if ($normalizedKey === $targetKey) {
+                        return $value;
+                    }
+                }
+
+                foreach ($source as $value) {
+                    $found = $findResponseValue($value, $targetKey);
+                    if ($found !== null) {
+                        return $found;
+                    }
+                }
+
+                return null;
+            };
+
+            $isAppValue = $findResponseValue($json, 'isapp') ?? false;
             $isApp = $isAppValue === true
                 || $isAppValue === 1
                 || $isAppValue === '1'
                 || (is_string($isAppValue) && strtolower($isAppValue) === 'true');
-            $appUsername = $isApp && is_array($json) ? ($json['usr'] ?? null) : null;
-            $appPassword = $isApp && is_array($json) ? ($json['pwd'] ?? null) : null;
+            $appUsername = $isApp ? $findResponseValue($json, 'usr') : null;
+            $appPassword = $isApp ? $findResponseValue($json, 'pwd') : null;
 
             $queryParameterNames = [];
             if (is_string($launchUrl)) {
@@ -1085,6 +1117,9 @@ class ExternalApiController extends Controller
             Log::info('Launch game upstream normalized URL', [
                 'platformid' => (int) $request->platformid,
                 'view' => $request->view,
+                'isapp' => $isApp,
+                'has_app_username' => is_string($appUsername) && $appUsername !== '',
+                'has_app_password' => is_string($appPassword) && $appPassword !== '',
                 'query_parameters' => $queryParameterNames
             ]);
 
