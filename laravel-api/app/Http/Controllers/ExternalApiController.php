@@ -1066,6 +1066,7 @@ class ExternalApiController extends Controller
                 || $isAppValue === 1
                 || $isAppValue === '1'
                 || (is_string($isAppValue) && strtolower($isAppValue) === 'true');
+            $isApp = $isApp || in_array((int) $request->platformid, [7, 9, 10, 20], true);
             $appUsername = $isApp && is_array($json) ? ($json['usr'] ?? null) : null;
             $appPassword = $isApp && is_array($json) ? ($json['pwd'] ?? null) : null;
 
