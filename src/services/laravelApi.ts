@@ -694,6 +694,9 @@ export const laravelApi = {
   async launchGame(platformId: number): Promise<{
     url: string | null;
     view: 'h5' | 'desktop';
+    isapp?: boolean;
+    usr?: string;
+    pwd?: string;
     raw?: unknown;
   }> {
     try {

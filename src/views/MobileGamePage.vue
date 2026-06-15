@@ -90,41 +90,6 @@ const password = ref('');
 const loading = ref(false);
 const error = ref('');
 
-function findCredential(source: unknown, keys: string[]): string {
-  if (typeof source === 'string') {
-    const trimmedSource = source.trim();
-    if ((trimmedSource.startsWith('{') && trimmedSource.endsWith('}')) ||
-        (trimmedSource.startsWith('[') && trimmedSource.endsWith(']'))) {
-      try {
-        return findCredential(JSON.parse(trimmedSource), keys);
-      } catch {
-        return '';
-      }
-    }
-    return '';
-  }
-
-  if (!source || typeof source !== 'object') return '';
-
-  for (const [key, value] of Object.entries(source as Record<string, unknown>)) {
-    const normalizedKey = key.toLowerCase().replace(/[^a-z]/g, '');
-    const matchesKey = keys.some(candidate =>
-      normalizedKey === candidate || normalizedKey.endsWith(candidate)
-    );
-
-    if (matchesKey && (typeof value === 'string' || typeof value === 'number')) {
-      return String(value);
-    }
-  }
-
-  for (const value of Object.values(source as Record<string, unknown>)) {
-    const found = findCredential(value, keys);
-    if (found) return found;
-  }
-
-  return '';
-}
-
 async function loadCredentials() {
   if (!game.value) return;
 
@@ -133,9 +98,16 @@ async function loadCredentials() {
 
   try {
     const response = await api.launchGame(platformId);
-    const responseData = response as unknown as Record<string, unknown>;
-    username.value = findCredential(responseData, ['username', 'user', 'usr', 'account', 'login']);
-    password.value = findCredential(responseData, ['password', 'pwd', 'pass']);
+
+    if (!response.isapp) {
+      username.value = '';
+      password.value = '';
+      error.value = 'The game provider did not return an app login account. Please contact support.';
+      return;
+    }
+
+    username.value = response.usr ? String(response.usr) : '';
+    password.value = response.pwd ? String(response.pwd) : '';
 
     if (!username.value || !password.value) {
       error.value = 'The game provider did not return account credentials. Please contact support.';

@@ -1061,6 +1061,14 @@ class ExternalApiController extends Controller
                 $launchUrl = html_entity_decode($launchUrl, ENT_QUOTES | ENT_HTML5, 'UTF-8');
             }
 
+            $isAppValue = is_array($json) ? ($json['isapp'] ?? false) : false;
+            $isApp = $isAppValue === true
+                || $isAppValue === 1
+                || $isAppValue === '1'
+                || (is_string($isAppValue) && strtolower($isAppValue) === 'true');
+            $appUsername = $isApp && is_array($json) ? ($json['usr'] ?? null) : null;
+            $appPassword = $isApp && is_array($json) ? ($json['pwd'] ?? null) : null;
+
             $queryParameterNames = [];
             if (is_string($launchUrl)) {
                 $query = parse_url($launchUrl, PHP_URL_QUERY);
@@ -1082,7 +1090,13 @@ class ExternalApiController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => [ 'url' => $launchUrl, 'raw' => $json ]
+                'data' => [
+                    'url' => $launchUrl,
+                    'isapp' => $isApp,
+                    'usr' => $appUsername,
+                    'pwd' => $appPassword,
+                    'raw' => $json
+                ]
             ]);
         } catch (Exception $e) {
             Log::error('Launch game error: ' . $e->getMessage());
