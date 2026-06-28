@@ -386,12 +386,14 @@ export const laravelApi = {
 
       if (result?.success && result?.data) {
         const memberData = result.data as MemberDetails;
+        const credits = Number((memberData as any).credits ?? (memberData as any).wallet?.value ?? 0);
+        const bonus = Number((memberData as any).bonus ?? (memberData as any).wallet?.bonus ?? 0);
 
-        if ((memberData as any).wallet) {
+        if ((memberData as any).wallet || (memberData as any).credits !== undefined) {
           (memberData as any).account = {
-            cash: { currency: 'MYR', amount: Number((memberData as any).wallet?.value ?? 0).toFixed(2) },
+            cash: { currency: 'MYR', amount: credits.toFixed(2) },
             chips: { currency: 'MYR', amount: '0.00' },
-            bonus: { currency: 'MYR', amount: Number((memberData as any).wallet?.bonus ?? 0).toFixed(2) },
+            bonus: { currency: 'MYR', amount: bonus.toFixed(2) },
           } as any;
         } else if (!(memberData as any).account) {
           (memberData as any).account = {

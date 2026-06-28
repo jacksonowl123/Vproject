@@ -178,60 +178,53 @@ class ExternalApiController extends Controller
      */
     public function getMemberDetails(Request $request): JsonResponse
     {
-        // Temporary local profile (external API disabled)
         try {
-            $username = 'Member';
-            $authHeaderToken = $request->bearerToken();
-            if ($authHeaderToken) {
-                $parts = explode('.', $authHeaderToken);
-                if (count($parts) >= 2) {
-                    $payloadJson = base64_decode(strtr($parts[1], '-_', '+/'));
-                    $payloadArr = json_decode($payloadJson, true);
-                    if (is_array($payloadArr)) {
-                        $username = $payloadArr['usr'] ?? $payloadArr['sub'] ?? $username;
-                    }
-                }
-            }
+            $response = $this->makeRegisterApiCall($request, 'GET', '/api/members/index');
 
-            $stub = [
-                'iid' => 0,
+            $memberId = (int) ($response['member_id'] ?? $response['user_id'] ?? 0);
+            $username = (string) ($response['user_usr'] ?? $response['usr'] ?? 'Member');
+            $email = (string) ($response['user_email'] ?? $response['email'] ?? '');
+            $people = (int) ($response['user_people'] ?? $response['people'] ?? 0);
+            $status = (int) ($response['user_status'] ?? $response['status'] ?? 1);
+            $credits = (float) ($response['credits'] ?? 0);
+            $bonus = (float) ($response['bonus'] ?? 0);
+
+            $member = [
+                'iid' => $memberId,
+                'member_id' => $memberId,
+                'user_id' => $memberId,
                 'usr' => $username,
-                'email' => '',
-                'people' => 0,
-                'status' => 1,
-                'permalink' => '',
+                'user_usr' => $username,
+                'email' => $email,
+                'user_email' => $email,
+                'people' => $people,
+                'user_people' => $people,
+                'status' => $status,
+                'user_status' => $status,
+                'profile' => $response['profile'] ?? null,
+                'address' => $response['address'] ?? null,
                 'wallet' => [
-                    'iid' => 0,
-                    'value' => 0,
-                    'bonus' => 0,
+                    'iid' => $memberId,
+                    'value' => $credits,
+                    'bonus' => $bonus,
                     'account' => null,
                     'accountType' => 'wallet'
-                ]
+                ],
+                'credits' => $credits,
+                'bonus' => $bonus,
+                'raw' => $response,
             ];
 
             return response()->json([
                 'success' => true,
-                'data' => $stub
+                'data' => $member
             ]);
         } catch (Exception $e) {
+            Log::error('Get member details error: ' . $e->getMessage());
             return response()->json([
-                'success' => true,
-                'data' => [
-                    'iid' => 0,
-                    'usr' => 'Member',
-                    'email' => '',
-                    'people' => 0,
-                    'status' => 1,
-                    'permalink' => '',
-                    'wallet' => [
-                        'iid' => 0,
-                        'value' => 0,
-                        'bonus' => 0,
-                        'account' => null,
-                        'accountType' => 'wallet'
-                    ]
-                ]
-            ]);
+                'success' => false,
+                'message' => 'Failed to get member details: ' . $e->getMessage()
+            ], 400);
         }
     }
 
@@ -773,11 +766,13 @@ class ExternalApiController extends Controller
                 'raw' => $json
             ]);
         } catch (Exception $e) {
-            Log::error('Get platform credentials error: ' . $e->getMessage());
+            Log::warning('Get platform credentials error: ' . $e->getMessage());
             return response()->json([
-                'success' => false,
-                'message' => 'Failed to get platform credentials: ' . $e->getMessage()
-            ], 400);
+                'success' => true,
+                'data' => [],
+                'raw' => null,
+                'message' => 'Platform credentials unavailable, fallback to platform balance API'
+            ]);
         }
     }
 
