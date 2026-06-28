@@ -1107,8 +1107,8 @@ class ExternalApiController extends Controller
             $token = $this->getAuthToken($request);
 
             $candidatePaths = [
-                '/api/platform/launch',
                 '/api/platforms/launch',
+                '/api/platform/launch',
                 '/platform/launch',
             ];
 
@@ -1201,6 +1201,7 @@ class ExternalApiController extends Controller
             $launchUrl = null;
             $lastStatus = 0;
             $lastBody = '';
+            $matchedLaunchRoute = false;
             $maxAttempts = $requiresProviderInitialization ? 2 : 1;
 
             for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
@@ -1263,6 +1264,7 @@ class ExternalApiController extends Controller
                                 ->post($url, $variant['payload']);
                             $lastStatus = $upstream->status();
                             $lastBody = $upstream->body();
+                            $matchedLaunchRoute = $lastStatus !== 404;
 
                             if ($upstream->successful()) {
                                 $json = $upstream->json();
@@ -1287,7 +1289,7 @@ class ExternalApiController extends Controller
                             }
 
                             if ($lastStatus !== 404) {
-                                break;
+                                continue;
                             }
                         }
 
@@ -1296,7 +1298,7 @@ class ExternalApiController extends Controller
                         }
 
                         if ($lastStatus !== 404) {
-                            break;
+                            break 2;
                         }
                     }
 
@@ -1315,6 +1317,10 @@ class ExternalApiController extends Controller
                         'view' => $request->view
                     ]);
                     usleep(250000);
+                }
+
+                if ($matchedLaunchRoute) {
+                    break;
                 }
             }
 
