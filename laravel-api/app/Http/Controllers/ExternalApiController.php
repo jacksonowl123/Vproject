@@ -1447,9 +1447,18 @@ class ExternalApiController extends Controller
             if (preg_match('/status\s(\d{3})/i', $e->getMessage(), $m)) {
                 $status = (int) $m[1];
             }
+            $isPlatformTransferFailure = str_contains(
+                strtolower($e->getMessage()),
+                'transfer wallet credits to platform'
+            ) || str_contains(
+                strtolower($e->getMessage()),
+                'failed to transfer credits to platform'
+            );
+
             return response()->json([
                 'success' => false,
-                'message' => 'Game launch failed: ' . $e->getMessage()
+                'message' => 'Game launch failed: ' . $e->getMessage(),
+                'error_type' => $isPlatformTransferFailure ? 'platform_transfer_failed' : 'launch_failed'
             ], $status);
         }
     }
