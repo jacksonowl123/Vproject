@@ -434,8 +434,8 @@ export default defineComponent({
       console.log('🚀 WalletPage mounting - loading initial data...');
       
       // Load balance data if user is logged in
-      if (authState.isLoggedIn && authState.memberDetails) {
-        await loadPlatformBalances();
+      if (authState.isLoggedIn) {
+        await refreshBalance();
       } else {
         console.log('⚠️ User not logged in or no member details available');
         balanceError.value = 'Please log in to view balance information';

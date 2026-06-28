@@ -179,7 +179,71 @@ class ExternalApiController extends Controller
     public function getMemberDetails(Request $request): JsonResponse
     {
         try {
-            $response = $this->makeRegisterApiCall($request, 'GET', '/api/members/index');
+            $token = $this->getAuthToken($request);
+            $url = rtrim($this->registerBaseUrl, '/') . '/api/members/index';
+            $response = null;
+            $lastError = null;
+
+            $requestVariants = [
+                [
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                        'Accept' => 'application/json',
+                        'User-Agent' => 'Laravel-API-Proxy/1.0',
+                        'Authorization' => 'Bearer ' . $token,
+                        'X-Auth-Token' => $token,
+                        'X-User-JWT' => $token,
+                    ],
+                    'query' => ['user_jwt' => $token],
+                ],
+                [
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                        'Accept' => 'application/json',
+                        'User-Agent' => 'Laravel-API-Proxy/1.0',
+                    ],
+                    'query' => ['user_jwt' => $token],
+                ],
+                [
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                        'Accept' => 'application/json',
+                        'User-Agent' => 'Laravel-API-Proxy/1.0',
+                        'Authorization' => 'Bearer ' . $token,
+                    ],
+                    'query' => [],
+                ],
+            ];
+
+            foreach ($requestVariants as $variant) {
+                $upstream = Http::timeout($this->timeout)
+                    ->withHeaders($variant['headers'])
+                    ->get($url, $variant['query']);
+
+                if ($upstream->successful()) {
+                    $response = $upstream->json();
+                    if ($response !== null) {
+                        break;
+                    }
+                    $lastError = 'Members index API returned invalid JSON response';
+                    continue;
+                }
+
+                $lastError = "Members index API request failed with status {$upstream->status()}: {$upstream->body()}";
+            }
+
+            if (!is_array($response)) {
+                throw new Exception($lastError ?: 'Members index API request failed');
+            }
+
+            $response = $response['data']
+                ?? ($response['member'] ?? null)
+                ?? ($response['result'] ?? null)
+                ?? $response;
+
+            if (!is_array($response)) {
+                throw new Exception('Members index API returned an unexpected response shape');
+            }
 
             $memberId = (int) ($response['member_id'] ?? $response['user_id'] ?? 0);
             $username = (string) ($response['user_usr'] ?? $response['usr'] ?? 'Member');
@@ -1042,39 +1106,85 @@ class ExternalApiController extends Controller
                 '/platform/launch',
             ];
 
-            $headers = [
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-                'User-Agent' => 'Laravel-API-Proxy/1.0',
-                'Authorization' => 'Bearer ' . $token,
-                'X-Auth-Token' => $token,
-                'X-User-JWT' => $token,
-            ];
-
             $json = null;
             $lastStatus = 0;
             $lastBody = '';
             foreach ($candidatePaths as $path) {
                 $url = $base . $path;
-                Log::info('Launch game: trying upstream URL', [
-                    'url' => $url,
-                    'platformid' => (int) $request->platformid,
-                    'view' => $request->view
-                ]);
-                $payload = [
-                    'platformid' => (int) $request->platformid,
-                    'view' => $request->view,
-                    'user_jwt' => $token
+
+                $variants = [
+                    [
+                        'headers' => [
+                            'Content-Type' => 'application/json',
+                            'Accept' => 'application/json',
+                            'User-Agent' => 'Laravel-API-Proxy/1.0',
+                            'Authorization' => 'Bearer ' . $token,
+                            'X-Auth-Token' => $token,
+                            'X-User-JWT' => $token,
+                        ],
+                        'payload' => [
+                            'platformid' => (int) $request->platformid,
+                            'view' => $request->view,
+                            'user_jwt' => $token
+                        ],
+                    ],
+                    [
+                        'headers' => [
+                            'Content-Type' => 'application/json',
+                            'Accept' => 'application/json',
+                            'User-Agent' => 'Laravel-API-Proxy/1.0',
+                        ],
+                        'payload' => [
+                            'platformid' => (int) $request->platformid,
+                            'view' => $request->view,
+                            'user_jwt' => $token
+                        ],
+                    ],
+                    [
+                        'headers' => [
+                            'Content-Type' => 'application/json',
+                            'Accept' => 'application/json',
+                            'User-Agent' => 'Laravel-API-Proxy/1.0',
+                            'Authorization' => 'Bearer ' . $token,
+                        ],
+                        'payload' => [
+                            'platformid' => (int) $request->platformid,
+                            'view' => $request->view,
+                        ],
+                    ],
                 ];
-                $upstream = Http::timeout($this->timeout)
-                    ->withHeaders($headers)
-                    ->post($url, $payload);
-                $lastStatus = $upstream->status();
-                $lastBody = $upstream->body();
-                if ($upstream->successful()) {
-                    $json = $upstream->json();
+
+                foreach ($variants as $variant) {
+                    Log::info('Launch game: trying upstream URL', [
+                        'url' => $url,
+                        'platformid' => (int) $request->platformid,
+                        'view' => $request->view,
+                        'has_user_jwt' => array_key_exists('user_jwt', $variant['payload']),
+                        'has_auth_header' => array_key_exists('Authorization', $variant['headers']),
+                    ]);
+
+                    $upstream = Http::timeout($this->timeout)
+                        ->withHeaders($variant['headers'])
+                        ->post($url, $variant['payload']);
+                    $lastStatus = $upstream->status();
+                    $lastBody = $upstream->body();
+
+                    if ($upstream->successful()) {
+                        $json = $upstream->json();
+                        if ($json === null) {
+                            $trimmedBody = trim($lastBody);
+                            if ($trimmedBody !== '') {
+                                $json = $trimmedBody;
+                            }
+                        }
+                        break;
+                    }
+                }
+
+                if ($json !== null) {
                     break;
                 }
+
                 if ($lastStatus !== 404) {
                     break;
                 }
@@ -1090,7 +1200,9 @@ class ExternalApiController extends Controller
 
             // Normalize to { url } from common shapes
             $launchUrl = null;
-            if (is_array($json)) {
+            if (is_string($json)) {
+                $launchUrl = $json;
+            } elseif (is_array($json)) {
                 $launchUrl = $json['url']
                     ?? ($json['Url'] ?? null)
                     ?? ($json['launch']['Url'] ?? null)
