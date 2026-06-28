@@ -1584,30 +1584,17 @@ class ExternalApiController extends Controller
     {
         $base = rtrim($this->registerBaseUrl, '/');
         $normalizedPath = '/' . ltrim($path, '/');
-        $urls = [$base . $normalizedPath];
-
-        $baseHasApiSuffix = str_ends_with($base, '/api');
         $pathHasApiPrefix = str_starts_with($normalizedPath, '/api/');
+        $rootBase = str_ends_with($base, '/api')
+            ? rtrim(substr($base, 0, -4), '/')
+            : $base;
 
-        if ($baseHasApiSuffix && $pathHasApiPrefix) {
-            $trimmedBase = rtrim(substr($base, 0, -4), '/');
-            if ($trimmedBase !== '') {
-                $urls[] = $trimmedBase . $normalizedPath;
-            }
-            $urls[] = $base . substr($normalizedPath, 4);
-        } elseif (!$baseHasApiSuffix && !$pathHasApiPrefix) {
-            $urls[] = $base . '/api' . $normalizedPath;
-        } elseif ($baseHasApiSuffix && !$pathHasApiPrefix) {
-            $trimmedBase = rtrim(substr($base, 0, -4), '/');
-            $urls[] = $base . '/api' . $normalizedPath;
-            if ($trimmedBase !== '') {
-                $urls[] = $trimmedBase . '/api' . $normalizedPath;
-                $urls[] = $trimmedBase . $normalizedPath;
-            }
-        } elseif (!$baseHasApiSuffix && $pathHasApiPrefix) {
-            $urls[] = $base . substr($normalizedPath, 4);
-            $urls[] = $base . '/api' . substr($normalizedPath, 4);
-        }
+        $apiPath = $pathHasApiPrefix ? $normalizedPath : '/api' . $normalizedPath;
+        $rootPath = $pathHasApiPrefix ? substr($normalizedPath, 4) : $normalizedPath;
+        $urls = [
+            $rootBase . $apiPath,
+            $rootBase . $rootPath,
+        ];
 
         return array_values(array_unique(array_filter($urls, static fn ($url) => is_string($url) && $url !== '')));
     }
