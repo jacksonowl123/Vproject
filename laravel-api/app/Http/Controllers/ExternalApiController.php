@@ -730,22 +730,24 @@ class ExternalApiController extends Controller
 
         try {
             $token = $this->getAuthToken($request);
-            
-            $payload = [
-                'platformid' => $request->platformid
-            ];
 
-            $encodedPayload = base64_encode(json_encode($payload));
-            $requestBody = [
-                'endpoint' => 'platforms.balance',
-                'payload' => $encodedPayload
-            ];
+            $platforms = $this->fetchPlatformCredentials($token);
+            $platform = collect($platforms)->first(function ($platform) use ($request) {
+                $platformId = $platform['platformid']
+                    ?? $platform['platformId']
+                    ?? $platform['platform_id']
+                    ?? $platform['id']
+                    ?? null;
 
-            $response = $this->makeApiCall('POST', '', $requestBody, $token);
+                return (int) $platformId === (int) $request->platformid;
+            });
 
             return response()->json([
                 'success' => true,
-                'data' => $response
+                'data' => $platform ?? [
+                    'platformid' => (int) $request->platformid,
+                    'balance' => 0,
+                ],
             ]);
         } catch (Exception $e) {
             Log::error('Get platform balance error: ' . $e->getMessage());
@@ -763,18 +765,11 @@ class ExternalApiController extends Controller
     {
         try {
             $token = $this->getAuthToken($request);
-            
-            $encodedPayload = base64_encode('');
-            $requestBody = [
-                'endpoint' => 'platforms.balances',
-                'payload' => $encodedPayload
-            ];
-
-            $response = $this->makeApiCall('POST', '', $requestBody, $token);
+            $platforms = $this->fetchPlatformCredentials($token);
 
             return response()->json([
                 'success' => true,
-                'data' => $response
+                'data' => $platforms,
             ]);
         } catch (Exception $e) {
             Log::error('Get all platforms balance error: ' . $e->getMessage());
@@ -795,46 +790,12 @@ class ExternalApiController extends Controller
     {
         try {
             $token = $this->getAuthToken($request);
-            $response = null;
-            foreach ($this->buildRegisterApiUrls('/api/platforms/credentials') as $url) {
-                $response = Http::timeout($this->timeout)
-                    ->withHeaders([
-                        'Content-Type' => 'application/json',
-                        'Accept' => 'application/json',
-                        'User-Agent' => 'Laravel-API-Proxy/1.0',
-                        'Authorization' => 'Bearer ' . $token,
-                        'X-Auth-Token' => $token,
-                        'X-User-JWT' => $token,
-                    ])
-                    ->get($url);
-
-                if ($response->successful()) {
-                    break;
-                }
-            }
-
-            if (!$response || !$response->successful()) {
-                throw new Exception("Platform credentials API request failed with status {$response?->status()}: {$response?->body()}");
-            }
-
-            $json = $response->json();
-            if ($json === null) {
-                throw new Exception('Platform credentials API returned invalid JSON response');
-            }
-
-            $credentials = $json;
-            if (is_array($json) && !array_is_list($json)) {
-                $credentials = $json['data']
-                    ?? ($json['credentials'] ?? null)
-                    ?? ($json['platforms'] ?? null)
-                    ?? ($json['result'] ?? null)
-                    ?? $json;
-            }
+            $credentials = $this->fetchPlatformCredentials($token);
 
             return response()->json([
                 'success' => true,
                 'data' => $credentials,
-                'raw' => $json
+                'raw' => $credentials
             ]);
         } catch (Exception $e) {
             Log::warning('Get platform credentials error: ' . $e->getMessage());
@@ -842,7 +803,7 @@ class ExternalApiController extends Controller
                 'success' => true,
                 'data' => [],
                 'raw' => null,
-                'message' => 'Platform credentials unavailable, fallback to platform balance API'
+                'message' => 'Platform credentials unavailable'
             ]);
         }
     }
@@ -898,7 +859,10 @@ class ExternalApiController extends Controller
             Log::error('Transfer to error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Transfer failed: ' . $e->getMessage()
+                'message' => $this->formatTransferErrorMessage($e),
+                'error_type' => $this->isLegacyGatewayResolutionError($e)
+                    ? 'legacy_transfer_gateway_unavailable'
+                    : 'transfer_failed',
             ], 400);
         }
     }
@@ -954,7 +918,10 @@ class ExternalApiController extends Controller
             Log::error('Transfer from error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Transfer failed: ' . $e->getMessage()
+                'message' => $this->formatTransferErrorMessage($e),
+                'error_type' => $this->isLegacyGatewayResolutionError($e)
+                    ? 'legacy_transfer_gateway_unavailable'
+                    : 'transfer_failed',
             ], 400);
         }
     }
@@ -1448,6 +1415,65 @@ class ExternalApiController extends Controller
         ];
 
         return array_values(array_unique(array_filter($urls, static fn ($url) => is_string($url) && $url !== '')));
+    }
+
+    private function fetchPlatformCredentials(string $token): array
+    {
+        $response = null;
+        foreach ($this->buildRegisterApiUrls('/api/platforms/credentials') as $url) {
+            $response = Http::timeout($this->timeout)
+                ->withHeaders([
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                    'User-Agent' => 'Laravel-API-Proxy/1.0',
+                    'Authorization' => 'Bearer ' . $token,
+                    'X-Auth-Token' => $token,
+                    'X-User-JWT' => $token,
+                ])
+                ->get($url);
+
+            if ($response->successful()) {
+                break;
+            }
+        }
+
+        if (!$response || !$response->successful()) {
+            throw new Exception("Platform credentials API request failed with status {$response?->status()}: {$response?->body()}");
+        }
+
+        $json = $response->json();
+        if ($json === null) {
+            throw new Exception('Platform credentials API returned invalid JSON response');
+        }
+
+        if (is_array($json) && !array_is_list($json)) {
+            $credentials = $json['data']
+                ?? ($json['credentials'] ?? null)
+                ?? ($json['platforms'] ?? null)
+                ?? ($json['result'] ?? null)
+                ?? [];
+
+            return is_array($credentials) ? $credentials : [];
+        }
+
+        return is_array($json) ? $json : [];
+    }
+
+    private function isLegacyGatewayResolutionError(Exception $exception): bool
+    {
+        $message = $exception->getMessage();
+
+        return str_contains($message, 'api.dewamalaya33.com')
+            || str_contains($message, 'Could not resolve host');
+    }
+
+    private function formatTransferErrorMessage(Exception $exception): string
+    {
+        if ($this->isLegacyGatewayResolutionError($exception)) {
+            return 'Transfer service is still pointing to the old gateway api.dewamalaya33.com, which cannot be resolved. Please update EXTERNAL_API_BASE_URL to a working transfer gateway or ask the provider for the new transfer API endpoint.';
+        }
+
+        return 'Transfer failed: ' . $exception->getMessage();
     }
 
     private function getLocalBankAccounts(Request $request): array

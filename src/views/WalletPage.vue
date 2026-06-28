@@ -344,13 +344,11 @@ export default defineComponent({
     const loadPlatformBalances = async () => {
       try {
         console.log('🔍 Loading real platform balances...');
-        let response = await api.getPlatformCredentials();
-        let platforms = extractPlatformList(response.data);
+        const response = await api.getPlatformCredentials();
+        const platforms = extractPlatformList(response.data);
 
         if (!platforms.length) {
-          console.warn('⚠️ No platform credentials returned, falling back to platform balances API');
-          response = await api.getAllPlatformsBalance();
-          platforms = extractPlatformList(response.data);
+          console.warn('⚠️ No platform credentials returned from current API');
         }
 
         if (response.success && platforms.length) {
