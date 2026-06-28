@@ -1202,10 +1202,16 @@ class ExternalApiController extends Controller
             $lastStatus = 0;
             $lastBody = '';
             $matchedLaunchRoute = false;
+            $transferCreditsFailed = false;
             $maxAttempts = $requiresProviderInitialization ? 2 : 1;
 
             for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
                 foreach ($candidatePaths as $path) {
+                    $basePayload = [
+                        'platformid' => $platformId,
+                        'view' => $request->view,
+                    ];
+
                     $variants = [
                         [
                             'headers' => [
@@ -1216,11 +1222,7 @@ class ExternalApiController extends Controller
                                 'X-Auth-Token' => $token,
                                 'X-User-JWT' => $token,
                             ],
-                            'payload' => [
-                                'platformid' => $platformId,
-                                'view' => $request->view,
-                                'user_jwt' => $token
-                            ],
+                            'payload' => $basePayload + ['user_jwt' => $token],
                         ],
                         [
                             'headers' => [
@@ -1228,11 +1230,7 @@ class ExternalApiController extends Controller
                                 'Accept' => 'application/json',
                                 'User-Agent' => 'Laravel-API-Proxy/1.0',
                             ],
-                            'payload' => [
-                                'platformid' => $platformId,
-                                'view' => $request->view,
-                                'user_jwt' => $token
-                            ],
+                            'payload' => $basePayload + ['user_jwt' => $token],
                         ],
                         [
                             'headers' => [
@@ -1241,9 +1239,36 @@ class ExternalApiController extends Controller
                                 'User-Agent' => 'Laravel-API-Proxy/1.0',
                                 'Authorization' => 'Bearer ' . $token,
                             ],
-                            'payload' => [
-                                'platformid' => $platformId,
-                                'view' => $request->view,
+                            'payload' => $basePayload,
+                        ],
+                        [
+                            'headers' => [
+                                'Content-Type' => 'application/json',
+                                'Accept' => 'application/json',
+                                'User-Agent' => 'Laravel-API-Proxy/1.0',
+                                'Authorization' => 'Bearer ' . $token,
+                                'X-Auth-Token' => $token,
+                                'X-User-JWT' => $token,
+                            ],
+                            'payload' => $basePayload + [
+                                'user_jwt' => $token,
+                                'transfer' => false,
+                                'transfer_amount' => 0,
+                            ],
+                        ],
+                        [
+                            'headers' => [
+                                'Content-Type' => 'application/json',
+                                'Accept' => 'application/json',
+                                'User-Agent' => 'Laravel-API-Proxy/1.0',
+                                'Authorization' => 'Bearer ' . $token,
+                                'X-Auth-Token' => $token,
+                                'X-User-JWT' => $token,
+                            ],
+                            'payload' => $basePayload + [
+                                'user_jwt' => $token,
+                                'skip_transfer' => true,
+                                'amount' => 0,
                             ],
                         ],
                     ];
@@ -1279,11 +1304,13 @@ class ExternalApiController extends Controller
                             }
 
                             if ($isTransferCreditsError($lastStatus, $lastBody)) {
+                                $transferCreditsFailed = true;
                                 Log::warning('Launch game: transfer-to-platform failed for variant, trying fallback', [
                                     'platformid' => $platformId,
                                     'view' => $request->view,
                                     'attempt' => $attempt,
-                                    'url' => $url
+                                    'url' => $url,
+                                    'payload_keys' => array_keys($variant['payload'])
                                 ]);
                                 continue;
                             }
@@ -1325,6 +1352,10 @@ class ExternalApiController extends Controller
             }
 
             if ($json === null) {
+                if ($transferCreditsFailed) {
+                    throw new Exception("Launch game API could not transfer wallet credits to platform. Please try launching again after refreshing your balance, or transfer credits manually from Wallet. Upstream response: {$lastBody}");
+                }
+
                 throw new Exception("Launch game API request failed with status {$lastStatus}: {$lastBody}");
             }
 
