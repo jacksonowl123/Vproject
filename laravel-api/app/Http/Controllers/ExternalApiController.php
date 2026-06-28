@@ -180,9 +180,9 @@ class ExternalApiController extends Controller
     {
         try {
             $token = $this->getAuthToken($request);
-            $url = rtrim($this->registerBaseUrl, '/') . '/api/members/index';
             $response = null;
             $lastError = null;
+            $candidateUrls = $this->buildRegisterApiUrls('/api/members/index');
 
             $requestVariants = [
                 [
@@ -216,20 +216,22 @@ class ExternalApiController extends Controller
             ];
 
             foreach ($requestVariants as $variant) {
-                $upstream = Http::timeout($this->timeout)
-                    ->withHeaders($variant['headers'])
-                    ->get($url, $variant['query']);
+                foreach ($candidateUrls as $url) {
+                    $upstream = Http::timeout($this->timeout)
+                        ->withHeaders($variant['headers'])
+                        ->get($url, $variant['query']);
 
-                if ($upstream->successful()) {
-                    $response = $upstream->json();
-                    if ($response !== null) {
-                        break;
+                    if ($upstream->successful()) {
+                        $response = $upstream->json();
+                        if ($response !== null) {
+                            break 2;
+                        }
+                        $lastError = 'Members index API returned invalid JSON response';
+                        continue;
                     }
-                    $lastError = 'Members index API returned invalid JSON response';
-                    continue;
-                }
 
-                $lastError = "Members index API request failed with status {$upstream->status()}: {$upstream->body()}";
+                    $lastError = "Members index API request failed with status {$upstream->status()}: {$upstream->body()}";
+                }
             }
 
             if (!is_array($response)) {
@@ -793,21 +795,26 @@ class ExternalApiController extends Controller
     {
         try {
             $token = $this->getAuthToken($request);
-            $url = rtrim($this->registerBaseUrl, '/') . '/api/platforms/credentials';
+            $response = null;
+            foreach ($this->buildRegisterApiUrls('/api/platforms/credentials') as $url) {
+                $response = Http::timeout($this->timeout)
+                    ->withHeaders([
+                        'Content-Type' => 'application/json',
+                        'Accept' => 'application/json',
+                        'User-Agent' => 'Laravel-API-Proxy/1.0',
+                        'Authorization' => 'Bearer ' . $token,
+                        'X-Auth-Token' => $token,
+                        'X-User-JWT' => $token,
+                    ])
+                    ->get($url);
 
-            $response = Http::timeout($this->timeout)
-                ->withHeaders([
-                    'Content-Type' => 'application/json',
-                    'Accept' => 'application/json',
-                    'User-Agent' => 'Laravel-API-Proxy/1.0',
-                    'Authorization' => 'Bearer ' . $token,
-                    'X-Auth-Token' => $token,
-                    'X-User-JWT' => $token,
-                ])
-                ->get($url);
+                if ($response->successful()) {
+                    break;
+                }
+            }
 
-            if (!$response->successful()) {
-                throw new Exception("Platform credentials API request failed with status {$response->status()}: {$response->body()}");
+            if (!$response || !$response->successful()) {
+                throw new Exception("Platform credentials API request failed with status {$response?->status()}: {$response?->body()}");
             }
 
             $json = $response->json();
@@ -1099,7 +1106,6 @@ class ExternalApiController extends Controller
         try {
             $token = $this->getAuthToken($request);
 
-            $base = rtrim($this->registerBaseUrl, '/');
             $candidatePaths = [
                 '/api/platform/launch',
                 '/api/platforms/launch',
@@ -1183,7 +1189,7 @@ class ExternalApiController extends Controller
                         'X-Auth-Token' => $token,
                         'X-User-JWT' => $token,
                     ])
-                    ->get($base . '/api/platforms/credentials');
+                    ->get($this->buildRegisterApiUrls('/api/platforms/credentials')[0]);
 
                 Log::info('Launch game: provider credentials initialized', [
                     'platformid' => $platformId,
@@ -1199,7 +1205,7 @@ class ExternalApiController extends Controller
 
             for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
                 foreach ($candidatePaths as $path) {
-                    $url = $base . $path;
+                    $candidateUrls = $this->buildRegisterApiUrls($path);
 
                     $variants = [
                         [
@@ -1243,42 +1249,52 @@ class ExternalApiController extends Controller
                         ],
                     ];
 
-                    foreach ($variants as $variant) {
-                        Log::info('Launch game: trying upstream URL', [
-                            'url' => $url,
-                            'platformid' => $platformId,
-                            'view' => $request->view,
-                            'attempt' => $attempt,
-                            'has_user_jwt' => array_key_exists('user_jwt', $variant['payload']),
-                            'has_auth_header' => array_key_exists('Authorization', $variant['headers']),
-                        ]);
-
-                        $upstream = Http::timeout($this->timeout)
-                            ->withHeaders($variant['headers'])
-                            ->post($url, $variant['payload']);
-                        $lastStatus = $upstream->status();
-                        $lastBody = $upstream->body();
-
-                        if ($upstream->successful()) {
-                            $json = $upstream->json();
-                            if ($json === null) {
-                                $trimmedBody = trim($lastBody);
-                                if ($trimmedBody !== '') {
-                                    $json = $trimmedBody;
-                                }
-                            }
-                            $launchUrl = $extractLaunchUrl($json);
-                            break;
-                        }
-
-                        if ($isTransferCreditsError($lastStatus, $lastBody)) {
-                            Log::warning('Launch game: transfer-to-platform failed for variant, trying fallback', [
+                    foreach ($candidateUrls as $url) {
+                        foreach ($variants as $variant) {
+                            Log::info('Launch game: trying upstream URL', [
+                                'url' => $url,
                                 'platformid' => $platformId,
                                 'view' => $request->view,
                                 'attempt' => $attempt,
-                                'url' => $url
+                                'has_user_jwt' => array_key_exists('user_jwt', $variant['payload']),
+                                'has_auth_header' => array_key_exists('Authorization', $variant['headers']),
                             ]);
-                            continue;
+
+                            $upstream = Http::timeout($this->timeout)
+                                ->withHeaders($variant['headers'])
+                                ->post($url, $variant['payload']);
+                            $lastStatus = $upstream->status();
+                            $lastBody = $upstream->body();
+
+                            if ($upstream->successful()) {
+                                $json = $upstream->json();
+                                if ($json === null) {
+                                    $trimmedBody = trim($lastBody);
+                                    if ($trimmedBody !== '') {
+                                        $json = $trimmedBody;
+                                    }
+                                }
+                                $launchUrl = $extractLaunchUrl($json);
+                                break 2;
+                            }
+
+                            if ($isTransferCreditsError($lastStatus, $lastBody)) {
+                                Log::warning('Launch game: transfer-to-platform failed for variant, trying fallback', [
+                                    'platformid' => $platformId,
+                                    'view' => $request->view,
+                                    'attempt' => $attempt,
+                                    'url' => $url
+                                ]);
+                                continue;
+                            }
+
+                            if ($lastStatus !== 404) {
+                                break;
+                            }
+                        }
+
+                        if ($json !== null) {
+                            break;
                         }
 
                         if ($lastStatus !== 404) {
@@ -1507,7 +1523,6 @@ class ExternalApiController extends Controller
      */
     private function makeRegisterApiCall(Request $request, string $method, string $path, array $data = [], bool $bodyTokenOnly = false): array
     {
-        $url = rtrim($this->registerBaseUrl, '/') . $path;
         $token = $request->bearerToken() ?? $request->header('X-Auth-Token') ?? $request->input('user_jwt');
 
         if (empty($token) && str_starts_with($path, '/api/banks/')) {
@@ -1530,22 +1545,29 @@ class ExternalApiController extends Controller
             $data['user_jwt'] = $token;
         }
 
-        Log::info("Making {$method} request to register API: {$url}", [
-            'headers' => $headers,
-            'data' => $data
-        ]);
+        $response = null;
+        foreach ($this->buildRegisterApiUrls($path) as $url) {
+            Log::info("Making {$method} request to register API: {$url}", [
+                'headers' => $headers,
+                'data' => $data
+            ]);
 
-        $httpClient = Http::timeout($this->timeout)->withHeaders($headers);
-        $response = strtoupper($method) === 'GET'
-            ? $httpClient->get($url, $data)
-            : $httpClient->post($url, $data);
+            $httpClient = Http::timeout($this->timeout)->withHeaders($headers);
+            $response = strtoupper($method) === 'GET'
+                ? $httpClient->get($url, $data)
+                : $httpClient->post($url, $data);
 
-        Log::info("Register API Response: Status {$response->status()}", [
-            'body' => $response->body()
-        ]);
+            Log::info("Register API Response: Status {$response->status()}", [
+                'body' => $response->body()
+            ]);
 
-        if (!$response->successful()) {
-            throw new Exception("Register API request failed with status {$response->status()}: {$response->body()}");
+            if ($response->successful()) {
+                break;
+            }
+        }
+
+        if (!$response || !$response->successful()) {
+            throw new Exception("Register API request failed with status {$response?->status()}: {$response?->body()}");
         }
 
         if (trim($response->body()) === '') {
@@ -1558,6 +1580,23 @@ class ExternalApiController extends Controller
         }
 
         return $responseData;
+    }
+
+    private function buildRegisterApiUrls(string $path): array
+    {
+        $base = rtrim($this->registerBaseUrl, '/');
+        $normalizedPath = '/' . ltrim($path, '/');
+        $urls = [$base . $normalizedPath];
+
+        if (str_ends_with($base, '/api') && str_starts_with($normalizedPath, '/api/')) {
+            $trimmedBase = substr($base, 0, -4);
+            $urls[] = rtrim($trimmedBase, '/') . $normalizedPath;
+            $urls[] = $base . substr($normalizedPath, 4);
+        } elseif (!str_ends_with($base, '/api') && !str_starts_with($normalizedPath, '/api/')) {
+            $urls[] = $base . '/api' . $normalizedPath;
+        }
+
+        return array_values(array_unique($urls));
     }
 
     private function getLocalBankAccounts(Request $request): array
