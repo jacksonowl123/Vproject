@@ -1106,6 +1106,7 @@ class ExternalApiController extends Controller
         try {
             $token = $this->getAuthToken($request);
 
+            $base = rtrim($this->registerBaseUrl, '/');
             $candidatePaths = [
                 '/api/platform/launch',
                 '/api/platforms/launch',
@@ -1189,7 +1190,7 @@ class ExternalApiController extends Controller
                         'X-Auth-Token' => $token,
                         'X-User-JWT' => $token,
                     ])
-                    ->get($this->buildRegisterApiUrls('/api/platforms/credentials')[0]);
+                    ->get($base . '/api/platforms/credentials');
 
                 Log::info('Launch game: provider credentials initialized', [
                     'platformid' => $platformId,
@@ -1205,8 +1206,6 @@ class ExternalApiController extends Controller
 
             for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
                 foreach ($candidatePaths as $path) {
-                    $candidateUrls = $this->buildRegisterApiUrls($path);
-
                     $variants = [
                         [
                             'headers' => [
@@ -1249,52 +1248,44 @@ class ExternalApiController extends Controller
                         ],
                     ];
 
-                    foreach ($candidateUrls as $url) {
-                        foreach ($variants as $variant) {
-                            Log::info('Launch game: trying upstream URL', [
-                                'url' => $url,
+                    $url = $base . $path;
+
+                    foreach ($variants as $variant) {
+                        Log::info('Launch game: trying upstream URL', [
+                            'url' => $url,
+                            'platformid' => $platformId,
+                            'view' => $request->view,
+                            'attempt' => $attempt,
+                            'has_user_jwt' => array_key_exists('user_jwt', $variant['payload']),
+                            'has_auth_header' => array_key_exists('Authorization', $variant['headers']),
+                        ]);
+
+                        $upstream = Http::timeout($this->timeout)
+                            ->withHeaders($variant['headers'])
+                            ->post($url, $variant['payload']);
+                        $lastStatus = $upstream->status();
+                        $lastBody = $upstream->body();
+
+                        if ($upstream->successful()) {
+                            $json = $upstream->json();
+                            if ($json === null) {
+                                $trimmedBody = trim($lastBody);
+                                if ($trimmedBody !== '') {
+                                    $json = $trimmedBody;
+                                }
+                            }
+                            $launchUrl = $extractLaunchUrl($json);
+                            break;
+                        }
+
+                        if ($isTransferCreditsError($lastStatus, $lastBody)) {
+                            Log::warning('Launch game: transfer-to-platform failed for variant, trying fallback', [
                                 'platformid' => $platformId,
                                 'view' => $request->view,
                                 'attempt' => $attempt,
-                                'has_user_jwt' => array_key_exists('user_jwt', $variant['payload']),
-                                'has_auth_header' => array_key_exists('Authorization', $variant['headers']),
+                                'url' => $url
                             ]);
-
-                            $upstream = Http::timeout($this->timeout)
-                                ->withHeaders($variant['headers'])
-                                ->post($url, $variant['payload']);
-                            $lastStatus = $upstream->status();
-                            $lastBody = $upstream->body();
-
-                            if ($upstream->successful()) {
-                                $json = $upstream->json();
-                                if ($json === null) {
-                                    $trimmedBody = trim($lastBody);
-                                    if ($trimmedBody !== '') {
-                                        $json = $trimmedBody;
-                                    }
-                                }
-                                $launchUrl = $extractLaunchUrl($json);
-                                break 2;
-                            }
-
-                            if ($isTransferCreditsError($lastStatus, $lastBody)) {
-                                Log::warning('Launch game: transfer-to-platform failed for variant, trying fallback', [
-                                    'platformid' => $platformId,
-                                    'view' => $request->view,
-                                    'attempt' => $attempt,
-                                    'url' => $url
-                                ]);
-                                continue;
-                            }
-
-                            if ($lastStatus !== 404) {
-                                break;
-                            }
-                        }
-
-                        if ($json !== null) {
-                            break;
+                            continue;
                         }
 
                         if ($lastStatus !== 404) {
