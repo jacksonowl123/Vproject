@@ -1584,32 +1584,32 @@ class ExternalApiController extends Controller
     {
         $base = rtrim($this->registerBaseUrl, '/');
         $normalizedPath = '/' . ltrim($path, '/');
-        $baseOptions = [$base];
-        $pathOptions = [$normalizedPath];
+        $urls = [$base . $normalizedPath];
 
-        if (str_ends_with($base, '/api')) {
+        $baseHasApiSuffix = str_ends_with($base, '/api');
+        $pathHasApiPrefix = str_starts_with($normalizedPath, '/api/');
+
+        if ($baseHasApiSuffix && $pathHasApiPrefix) {
             $trimmedBase = rtrim(substr($base, 0, -4), '/');
             if ($trimmedBase !== '') {
-                $baseOptions[] = $trimmedBase;
+                $urls[] = $trimmedBase . $normalizedPath;
             }
-        } else {
-            $baseOptions[] = $base . '/api';
-        }
-
-        if (str_starts_with($normalizedPath, '/api/')) {
-            $pathOptions[] = substr($normalizedPath, 4);
-        } else {
-            $pathOptions[] = '/api' . $normalizedPath;
-        }
-
-        $urls = [];
-        foreach ($baseOptions as $baseOption) {
-            foreach ($pathOptions as $pathOption) {
-                $urls[] = rtrim($baseOption, '/') . $pathOption;
+            $urls[] = $base . substr($normalizedPath, 4);
+        } elseif (!$baseHasApiSuffix && !$pathHasApiPrefix) {
+            $urls[] = $base . '/api' . $normalizedPath;
+        } elseif ($baseHasApiSuffix && !$pathHasApiPrefix) {
+            $trimmedBase = rtrim(substr($base, 0, -4), '/');
+            $urls[] = $base . '/api' . $normalizedPath;
+            if ($trimmedBase !== '') {
+                $urls[] = $trimmedBase . '/api' . $normalizedPath;
+                $urls[] = $trimmedBase . $normalizedPath;
             }
+        } elseif (!$baseHasApiSuffix && $pathHasApiPrefix) {
+            $urls[] = $base . substr($normalizedPath, 4);
+            $urls[] = $base . '/api' . substr($normalizedPath, 4);
         }
 
-        return array_values(array_unique($urls));
+        return array_values(array_unique(array_filter($urls, static fn ($url) => is_string($url) && $url !== '')));
     }
 
     private function getLocalBankAccounts(Request $request): array
