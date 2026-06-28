@@ -1106,87 +1106,201 @@ class ExternalApiController extends Controller
                 '/platform/launch',
             ];
 
+            $platformId = (int) $request->platformid;
+            $requiresProviderInitialization = in_array($platformId, [1, 6], true);
+
+            $extractLaunchUrl = static function ($responseJson): ?string {
+                if (is_string($responseJson)) {
+                    $trimmed = trim($responseJson, " \t\n\r\0\x0B\"'");
+                    return $trimmed !== ''
+                        ? html_entity_decode($trimmed, ENT_QUOTES | ENT_HTML5, 'UTF-8')
+                        : null;
+                }
+
+                if (!is_array($responseJson)) {
+                    return null;
+                }
+
+                $url = $responseJson['url']
+                    ?? ($responseJson['Url'] ?? null)
+                    ?? ($responseJson['launch']['Url'] ?? null)
+                    ?? ($responseJson['launch']['url'] ?? null)
+                    ?? ($responseJson['data']['url'] ?? null)
+                    ?? ($responseJson['data']['Url'] ?? null)
+                    ?? ($responseJson['data']['launch']['Url'] ?? null)
+                    ?? ($responseJson['data']['launch']['url'] ?? null)
+                    ?? ($responseJson['result']['url'] ?? null)
+                    ?? ($responseJson['result']['launch']['Url'] ?? null)
+                    ?? ($responseJson['redirect'] ?? null)
+                    ?? ($responseJson['redirect_url'] ?? null)
+                    ?? ($responseJson['launch_url'] ?? null);
+
+                if (!is_string($url)) {
+                    return null;
+                }
+
+                return html_entity_decode(
+                    trim($url, " \t\n\r\0\x0B\"'"),
+                    ENT_QUOTES | ENT_HTML5,
+                    'UTF-8'
+                );
+            };
+
+            $hasRequiredProviderSession = static function (?string $url, int $currentPlatformId): bool {
+                if (!$url) {
+                    return false;
+                }
+
+                parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+
+                if ($currentPlatformId === 6) {
+                    return !empty($query['launch_alias']);
+                }
+
+                if ($currentPlatformId === 1) {
+                    return !empty($query['sessionId']);
+                }
+
+                return true;
+            };
+
+            $isTransferCreditsError = static function (int $status, string $body): bool {
+                if ($status !== 422) {
+                    return false;
+                }
+
+                $normalizedBody = strtolower($body);
+                return str_contains($normalizedBody, 'failed to transfer credits to platform');
+            };
+
+            if ($requiresProviderInitialization) {
+                $credentialsResponse = Http::timeout($this->timeout)
+                    ->withHeaders([
+                        'Content-Type' => 'application/json',
+                        'Accept' => 'application/json',
+                        'User-Agent' => 'Laravel-API-Proxy/1.0',
+                        'Authorization' => 'Bearer ' . $token,
+                        'X-Auth-Token' => $token,
+                        'X-User-JWT' => $token,
+                    ])
+                    ->get($base . '/api/platforms/credentials');
+
+                Log::info('Launch game: provider credentials initialized', [
+                    'platformid' => $platformId,
+                    'status' => $credentialsResponse->status()
+                ]);
+            }
+
             $json = null;
+            $launchUrl = null;
             $lastStatus = 0;
             $lastBody = '';
-            foreach ($candidatePaths as $path) {
-                $url = $base . $path;
+            $maxAttempts = $requiresProviderInitialization ? 2 : 1;
 
-                $variants = [
-                    [
-                        'headers' => [
-                            'Content-Type' => 'application/json',
-                            'Accept' => 'application/json',
-                            'User-Agent' => 'Laravel-API-Proxy/1.0',
-                            'Authorization' => 'Bearer ' . $token,
-                            'X-Auth-Token' => $token,
-                            'X-User-JWT' => $token,
+            for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+                foreach ($candidatePaths as $path) {
+                    $url = $base . $path;
+
+                    $variants = [
+                        [
+                            'headers' => [
+                                'Content-Type' => 'application/json',
+                                'Accept' => 'application/json',
+                                'User-Agent' => 'Laravel-API-Proxy/1.0',
+                                'Authorization' => 'Bearer ' . $token,
+                                'X-Auth-Token' => $token,
+                                'X-User-JWT' => $token,
+                            ],
+                            'payload' => [
+                                'platformid' => $platformId,
+                                'view' => $request->view,
+                                'user_jwt' => $token
+                            ],
                         ],
-                        'payload' => [
-                            'platformid' => (int) $request->platformid,
+                        [
+                            'headers' => [
+                                'Content-Type' => 'application/json',
+                                'Accept' => 'application/json',
+                                'User-Agent' => 'Laravel-API-Proxy/1.0',
+                            ],
+                            'payload' => [
+                                'platformid' => $platformId,
+                                'view' => $request->view,
+                                'user_jwt' => $token
+                            ],
+                        ],
+                        [
+                            'headers' => [
+                                'Content-Type' => 'application/json',
+                                'Accept' => 'application/json',
+                                'User-Agent' => 'Laravel-API-Proxy/1.0',
+                                'Authorization' => 'Bearer ' . $token,
+                            ],
+                            'payload' => [
+                                'platformid' => $platformId,
+                                'view' => $request->view,
+                            ],
+                        ],
+                    ];
+
+                    foreach ($variants as $variant) {
+                        Log::info('Launch game: trying upstream URL', [
+                            'url' => $url,
+                            'platformid' => $platformId,
                             'view' => $request->view,
-                            'user_jwt' => $token
-                        ],
-                    ],
-                    [
-                        'headers' => [
-                            'Content-Type' => 'application/json',
-                            'Accept' => 'application/json',
-                            'User-Agent' => 'Laravel-API-Proxy/1.0',
-                        ],
-                        'payload' => [
-                            'platformid' => (int) $request->platformid,
-                            'view' => $request->view,
-                            'user_jwt' => $token
-                        ],
-                    ],
-                    [
-                        'headers' => [
-                            'Content-Type' => 'application/json',
-                            'Accept' => 'application/json',
-                            'User-Agent' => 'Laravel-API-Proxy/1.0',
-                            'Authorization' => 'Bearer ' . $token,
-                        ],
-                        'payload' => [
-                            'platformid' => (int) $request->platformid,
-                            'view' => $request->view,
-                        ],
-                    ],
-                ];
+                            'attempt' => $attempt,
+                            'has_user_jwt' => array_key_exists('user_jwt', $variant['payload']),
+                            'has_auth_header' => array_key_exists('Authorization', $variant['headers']),
+                        ]);
 
-                foreach ($variants as $variant) {
-                    Log::info('Launch game: trying upstream URL', [
-                        'url' => $url,
-                        'platformid' => (int) $request->platformid,
-                        'view' => $request->view,
-                        'has_user_jwt' => array_key_exists('user_jwt', $variant['payload']),
-                        'has_auth_header' => array_key_exists('Authorization', $variant['headers']),
-                    ]);
+                        $upstream = Http::timeout($this->timeout)
+                            ->withHeaders($variant['headers'])
+                            ->post($url, $variant['payload']);
+                        $lastStatus = $upstream->status();
+                        $lastBody = $upstream->body();
 
-                    $upstream = Http::timeout($this->timeout)
-                        ->withHeaders($variant['headers'])
-                        ->post($url, $variant['payload']);
-                    $lastStatus = $upstream->status();
-                    $lastBody = $upstream->body();
-
-                    if ($upstream->successful()) {
-                        $json = $upstream->json();
-                        if ($json === null) {
-                            $trimmedBody = trim($lastBody);
-                            if ($trimmedBody !== '') {
-                                $json = $trimmedBody;
+                        if ($upstream->successful()) {
+                            $json = $upstream->json();
+                            if ($json === null) {
+                                $trimmedBody = trim($lastBody);
+                                if ($trimmedBody !== '') {
+                                    $json = $trimmedBody;
+                                }
                             }
+                            $launchUrl = $extractLaunchUrl($json);
+                            break;
                         }
+
+                        if ($isTransferCreditsError($lastStatus, $lastBody)) {
+                            Log::warning('Launch game: transfer-to-platform failed for variant, trying fallback', [
+                                'platformid' => $platformId,
+                                'view' => $request->view,
+                                'attempt' => $attempt,
+                                'url' => $url
+                            ]);
+                            continue;
+                        }
+
+                        if ($lastStatus !== 404) {
+                            break;
+                        }
+                    }
+
+                    if ($json !== null && $hasRequiredProviderSession($launchUrl, $platformId)) {
                         break;
                     }
                 }
 
-                if ($json !== null) {
+                if ($json !== null && $hasRequiredProviderSession($launchUrl, $platformId)) {
                     break;
                 }
 
-                if ($lastStatus !== 404) {
-                    break;
+                if ($attempt < $maxAttempts) {
+                    Log::warning('Launch game: incomplete provider session, retrying', [
+                        'platformid' => $platformId,
+                        'view' => $request->view
+                    ]);
+                    usleep(250000);
                 }
             }
 
@@ -1194,28 +1308,8 @@ class ExternalApiController extends Controller
                 throw new Exception("Launch game API request failed with status {$lastStatus}: {$lastBody}");
             }
 
-            if ($json === null) {
-                throw new Exception('Launch game API returned invalid JSON response');
-            }
-
-            // Normalize to { url } from common shapes
-            $launchUrl = null;
-            if (is_string($json)) {
-                $launchUrl = $json;
-            } elseif (is_array($json)) {
-                $launchUrl = $json['url']
-                    ?? ($json['Url'] ?? null)
-                    ?? ($json['launch']['Url'] ?? null)
-                    ?? ($json['launch']['url'] ?? null)
-                    ?? ($json['data']['url'] ?? null)
-                    ?? ($json['data']['Url'] ?? null)
-                    ?? ($json['data']['launch']['Url'] ?? null)
-                    ?? ($json['data']['launch']['url'] ?? null)
-                    ?? ($json['result']['url'] ?? null)
-                    ?? ($json['result']['launch']['Url'] ?? null)
-                    ?? ($json['redirect'] ?? null)
-                    ?? ($json['redirect_url'] ?? null)
-                    ?? ($json['launch_url'] ?? null);
+            if (!$hasRequiredProviderSession($launchUrl, $platformId)) {
+                throw new Exception("Launch game API returned an incomplete session for platform {$platformId}");
             }
 
             if (is_string($launchUrl)) {
