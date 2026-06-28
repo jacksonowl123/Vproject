@@ -1586,14 +1586,29 @@ class ExternalApiController extends Controller
     {
         $base = rtrim($this->registerBaseUrl, '/');
         $normalizedPath = '/' . ltrim($path, '/');
-        $urls = [$base . $normalizedPath];
+        $baseOptions = [$base];
+        $pathOptions = [$normalizedPath];
 
-        if (str_ends_with($base, '/api') && str_starts_with($normalizedPath, '/api/')) {
-            $trimmedBase = substr($base, 0, -4);
-            $urls[] = rtrim($trimmedBase, '/') . $normalizedPath;
-            $urls[] = $base . substr($normalizedPath, 4);
-        } elseif (!str_ends_with($base, '/api') && !str_starts_with($normalizedPath, '/api/')) {
-            $urls[] = $base . '/api' . $normalizedPath;
+        if (str_ends_with($base, '/api')) {
+            $trimmedBase = rtrim(substr($base, 0, -4), '/');
+            if ($trimmedBase !== '') {
+                $baseOptions[] = $trimmedBase;
+            }
+        } else {
+            $baseOptions[] = $base . '/api';
+        }
+
+        if (str_starts_with($normalizedPath, '/api/')) {
+            $pathOptions[] = substr($normalizedPath, 4);
+        } else {
+            $pathOptions[] = '/api' . $normalizedPath;
+        }
+
+        $urls = [];
+        foreach ($baseOptions as $baseOption) {
+            foreach ($pathOptions as $pathOption) {
+                $urls[] = rtrim($baseOption, '/') . $pathOption;
+            }
         }
 
         return array_values(array_unique($urls));
