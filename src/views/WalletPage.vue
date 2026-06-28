@@ -23,7 +23,7 @@
         </div>
 
         <!-- Balance Overview -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-5 rounded-lg shadow-md text-white relative overflow-hidden">
             <div class="absolute right-0 top-0 opacity-10">
               <i class="fas fa-wallet text-9xl transform translate-x-4 -translate-y-4"></i>
@@ -41,28 +41,6 @@
             <div class="flex justify-between items-center mt-2">
               <span class="text-sm opacity-80">Last updated: {{ formatDate(new Date()) }}</span>
               <button @click="refreshBalance" class="text-white hover:text-blue-200 transition-colors" aria-label="Refresh balance">
-                <i class="fas fa-sync-alt" :class="{'animate-spin': isProcessing}"></i>
-              </button>
-            </div>
-          </div>
-
-          <div class="bg-gradient-to-r from-purple-500 to-purple-600 p-5 rounded-lg shadow-md text-white relative overflow-hidden">
-            <div class="absolute right-0 top-0 opacity-10">
-              <i class="fas fa-coins text-9xl transform translate-x-4 -translate-y-4"></i>
-            </div>
-            <div class="flex justify-between items-center mb-4">
-              <h3 class="text-lg font-medium">Game Chips</h3>
-              <button @click="toggleBalanceVisibility" class="text-white cursor-pointer z-10 relative p-2 text-xl" aria-label="Toggle balance visibility">
-                <i :class="isBalanceHidden ? 'fas fa-eye' : 'fas fa-eye-slash'"></i>
-              </button>
-            </div>
-            <p class="text-3xl font-bold mb-1">
-              {{ authState.memberDetails?.account?.chips?.currency || 'MYR' }} 
-              {{ isBalanceHidden ? '******' : (authState.memberDetails?.account?.chips?.amount || '0.00') }}
-            </p>
-            <div class="flex justify-between items-center mt-2">
-              <span class="text-sm opacity-80">Last updated: {{ formatDate(new Date()) }}</span>
-              <button @click="refreshBalance" class="text-white hover:text-purple-200 transition-colors" aria-label="Refresh balance">
                 <i class="fas fa-sync-alt" :class="{'animate-spin': isProcessing}"></i>
               </button>
             </div>
@@ -257,7 +235,7 @@ import { authState } from '../store/auth';
 import Swal from 'sweetalert2';
 import { laravelApi as api } from '../services/laravelApi';
 import { useRoute } from 'vue-router';
-import { getPlatformName } from '../utils/reference-ids';
+import { PLATFORM_NAMES } from '../utils/reference-ids';
 import MemberCenter2 from './MemberCenter2.vue';
 
 interface Transaction {
@@ -307,6 +285,46 @@ export default defineComponent({
     
     // Real game platforms data (will be populated from API)
     const gamePlatforms = ref<GamePlatform[]>([]);
+
+    function extractPlatformList(data: any): any[] {
+      if (Array.isArray(data)) return data;
+      if (Array.isArray(data?.data)) return data.data;
+      if (Array.isArray(data?.platforms)) return data.platforms;
+      if (Array.isArray(data?.credentials)) return data.credentials;
+      if (Array.isArray(data?.result)) return data.result;
+      return [];
+    }
+
+    function getPlatformId(platform: any, fallbackIndex: number): number | string {
+      return platform.platformid ?? platform.platformId ?? platform.platform_id ?? platform.id ?? fallbackIndex;
+    }
+
+    function getPlatformBalanceAmount(platform: any): number {
+      const balance = platform.balance ?? platform.credit ?? platform.credits ?? platform.amount ?? 0;
+      if (typeof balance === 'object' && balance !== null) {
+        return Number(balance.amount ?? balance.value ?? 0);
+      }
+      return Number(balance || 0);
+    }
+
+    function buildAllGamePlatforms(platforms: any[]): GamePlatform[] {
+      const platformBalanceMap = new Map<string, any>();
+
+      platforms.forEach((platform, index) => {
+        platformBalanceMap.set(String(getPlatformId(platform, index)), platform);
+      });
+
+      return Object.entries(PLATFORM_NAMES).map(([platformId, platformName]) => {
+        const platform = platformBalanceMap.get(platformId);
+        return {
+          id: platformId,
+          name: platform?.platformname || platform?.platformName || platform?.platform_name || platform?.name || platformName,
+          logo: '/favicon.ico',
+          status: 'online' as const,
+          balance: platform ? getPlatformBalanceAmount(platform) : 0
+        };
+      });
+    }
     
     // Calculate total balance using real data only
     const totalBalance = computed(() => {
@@ -316,7 +334,7 @@ export default defineComponent({
       
       // Use real platform balances from API
       const platformBalance = platformBalancesData.value.reduce((sum, platform) => {
-        return sum + Number(platform.balance?.amount || 0);
+        return sum + getPlatformBalanceAmount(platform);
       }, 0);
       
       return (cashBalance + chipsBalance + bonusBalance + platformBalance).toFixed(2);
@@ -326,19 +344,20 @@ export default defineComponent({
     const loadPlatformBalances = async () => {
       try {
         console.log('🔍 Loading real platform balances...');
-        const response = await api.getAllPlatformsBalance();
-        
-        if (response.success && response.data && Array.isArray(response.data)) {
-          platformBalancesData.value = response.data;
+        let response = await api.getPlatformCredentials();
+        let platforms = extractPlatformList(response.data);
+
+        if (!platforms.length) {
+          console.warn('⚠️ No platform credentials returned, falling back to platform balances API');
+          response = await api.getAllPlatformsBalance();
+          platforms = extractPlatformList(response.data);
+        }
+
+        if (response.success && platforms.length) {
+          platformBalancesData.value = platforms;
           
-          // Update gamePlatforms with real data
-          gamePlatforms.value = response.data.map((platform: any, index: number) => ({
-            id: platform.platformid?.toString() || index.toString(),
-            name: platform.platformname || getPlatformName(platform.platformid),
-            logo: '/favicon.ico',
-            status: 'online' as const,
-            balance: Number(platform.balance?.amount || 0)
-          }));
+          // Update all known game platforms with real data, defaulting missing balances to 0
+          gamePlatforms.value = buildAllGamePlatforms(platforms);
           
           console.log('✅ Platform balances loaded:', platformBalancesData.value);
         } else {
@@ -675,4 +694,4 @@ input[type="number"]::-webkit-outer-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
 }
-</style> 
+</style>

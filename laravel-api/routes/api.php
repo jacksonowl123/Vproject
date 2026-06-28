@@ -122,6 +122,7 @@ Route::group(['prefix' => 'proxy'], function () {
     // Wallets
     Route::post('/platform-balance', [ExternalApiController::class, 'getPlatformBalance']);
     Route::get('/platforms-balance', [ExternalApiController::class, 'getAllPlatformsBalance']);
+    Route::get('/platforms-credentials', [ExternalApiController::class, 'getPlatformCredentials']);
     Route::post('/transfer-to', [ExternalApiController::class, 'transferTo']);
     Route::post('/transfer-from', [ExternalApiController::class, 'transferFrom']);
     

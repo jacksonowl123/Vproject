@@ -3,10 +3,6 @@
     <span class="mr-4">
       {{ balance.cash.currency }} <span v-if="isBalanceHidden">******</span><span v-else>{{ balance.cash.amount }}</span> Cash
     </span>
-    <span class="mr-4">|</span>
-    <span>
-      {{ balance.chips.currency }} <span v-if="isBalanceHidden">******</span><span v-else>{{ balance.chips.amount }}</span> Chips
-    </span>
     <button class="ml-4 bg-green-600 rounded-full p-2 text-white" @click="onRecharge">Deposit</button>
     <button @click="toggleVisibility" class="ml-2" aria-label="Toggle balance visibility">
       <i :class="isBalanceHidden ? 'fas fa-eye' : 'fas fa-eye-slash'"></i>
@@ -154,4 +150,4 @@ export default defineComponent({
     };
   }
 });
-</script> 
+</script>

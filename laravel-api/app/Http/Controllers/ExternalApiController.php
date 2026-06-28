@@ -727,6 +727,61 @@ class ExternalApiController extends Controller
     }
 
     /**
+     * Get Game Platform Credentials & Balance (New API)
+     * Host: https://api.lbangdeyi.top
+     * Path: /api/platforms/credentials
+     * Method: GET
+     */
+    public function getPlatformCredentials(Request $request): JsonResponse
+    {
+        try {
+            $token = $this->getAuthToken($request);
+            $url = rtrim($this->registerBaseUrl, '/') . '/api/platforms/credentials';
+
+            $response = Http::timeout($this->timeout)
+                ->withHeaders([
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                    'User-Agent' => 'Laravel-API-Proxy/1.0',
+                    'Authorization' => 'Bearer ' . $token,
+                    'X-Auth-Token' => $token,
+                    'X-User-JWT' => $token,
+                ])
+                ->get($url);
+
+            if (!$response->successful()) {
+                throw new Exception("Platform credentials API request failed with status {$response->status()}: {$response->body()}");
+            }
+
+            $json = $response->json();
+            if ($json === null) {
+                throw new Exception('Platform credentials API returned invalid JSON response');
+            }
+
+            $credentials = $json;
+            if (is_array($json) && !array_is_list($json)) {
+                $credentials = $json['data']
+                    ?? ($json['credentials'] ?? null)
+                    ?? ($json['platforms'] ?? null)
+                    ?? ($json['result'] ?? null)
+                    ?? $json;
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $credentials,
+                'raw' => $json
+            ]);
+        } catch (Exception $e) {
+            Log::error('Get platform credentials error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get platform credentials: ' . $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
      * Transfer To Platform
      */
     public function transferTo(Request $request): JsonResponse

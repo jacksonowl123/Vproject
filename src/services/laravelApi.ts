@@ -777,6 +777,25 @@ export const laravelApi = {
     }
   },
 
+  /**
+   * Get game platform credentials and balances through Laravel backend
+   */
+  async getPlatformCredentials(): Promise<ApiResponse<any>> {
+    try {
+      const response = await laravelApiClient.get('/proxy/platforms-credentials');
+
+      if (response.data.success && response.data.data) {
+        console.log('✅ Platform credentials and balances loaded:', response.data.data);
+        return response.data;
+      }
+
+      return response.data;
+    } catch (error: any) {
+      console.error('Get platform credentials error:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || 'Failed to get platform credentials');
+    }
+  },
+
   // Additional utility methods for backward compatibility
   getGames(): Game[] {
     // Show only games supported by the new launch API (IDs = platformid)
