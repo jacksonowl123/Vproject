@@ -27,7 +27,7 @@ I have successfully created a comprehensive Laravel backend that eliminates all 
 ## 🚀 **Key Benefits Achieved**
 
 ### ✅ **CORS Issues Completely Resolved**
-- ❌ **Before**: Browser blocking requests to `api.dewamalaya33.com`
+- ❌ **Before**: Browser blocking requests to `api.lbangdeyi.top`
 - ✅ **After**: Server-to-server communication bypasses all CORS restrictions
 
 ### 🛡️ **Enhanced Security**
@@ -138,7 +138,7 @@ const response = await laravelApi.depositManual(data);
 
 ### Environment Variables
 ```env
-EXTERNAL_API_BASE_URL=http://api.dewamalaya33.com/api
+EXTERNAL_API_BASE_URL=https://api.lbangdeyi.top/api
 EXTERNAL_API_BEARER_TOKEN=your_token_here
 ```
 

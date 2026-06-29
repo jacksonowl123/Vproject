@@ -11,7 +11,7 @@ Vue.js Frontend (localhost:5173)
     ↓ 
 Laravel Backend (localhost:8000) 
     ↓ 
-External API (api.dewamalaya33.com)
+External API (api.lbangdeyi.top)
 ```
 
 ## Benefits of Using Laravel Backend
@@ -56,7 +56,7 @@ The Laravel backend uses environment variables for configuration:
 
 ```env
 # External API Configuration
-EXTERNAL_API_BASE_URL=http://api.dewamalaya33.com/api
+EXTERNAL_API_BASE_URL=https://api.lbangdeyi.top/api
 EXTERNAL_API_BEARER_TOKEN=your_bearer_token_here
 ```
 

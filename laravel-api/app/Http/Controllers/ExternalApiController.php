@@ -18,7 +18,7 @@ class ExternalApiController extends Controller
 
     public function __construct()
     {
-        $this->apiBaseUrl = env('EXTERNAL_API_BASE_URL', 'http://api.dewamalaya33.com/api');
+        $this->apiBaseUrl = env('EXTERNAL_API_BASE_URL', 'https://api.lbangdeyi.top/api');
         $this->bearerToken = env('EXTERNAL_API_BEARER_TOKEN', '');
         $this->timeout = 30; // 30 seconds timeout
         // Configurable via EXTERNAL_REGISTER_BASE_URL in .env file
@@ -1073,12 +1073,16 @@ class ExternalApiController extends Controller
         try {
             $token = $this->getAuthToken($request);
 
-            $base = rtrim($this->registerBaseUrl, '/');
             $candidatePaths = [
-                '/api/platform/launch',
                 '/api/platforms/launch',
+                '/api/platform/launch',
                 '/platform/launch',
             ];
+            $candidateUrls = [];
+            foreach ($candidatePaths as $path) {
+                $candidateUrls = array_merge($candidateUrls, $this->buildRegisterApiUrls($path));
+            }
+            $candidateUrls = array_values(array_unique($candidateUrls));
 
             $headers = [
                 'Content-Type' => 'application/json',
@@ -1092,8 +1096,7 @@ class ExternalApiController extends Controller
             $json = null;
             $lastStatus = 0;
             $lastBody = '';
-            foreach ($candidatePaths as $path) {
-                $url = $base . $path;
+            foreach ($candidateUrls as $url) {
                 Log::info('Launch game: trying upstream URL', [
                     'url' => $url,
                     'platformid' => (int) $request->platformid,
@@ -1228,9 +1231,11 @@ class ExternalApiController extends Controller
             if (preg_match('/status\s(\d{3})/i', $e->getMessage(), $m)) {
                 $status = (int) $m[1];
             }
+            $isTransferFailure = str_contains($e->getMessage(), 'Failed to transfer credits to platform');
             return response()->json([
                 'success' => false,
-                'message' => 'Game launch failed: ' . $e->getMessage()
+                'message' => 'Game launch failed: ' . $e->getMessage(),
+                'error_type' => $isTransferFailure ? 'platform_transfer_failed' : 'launch_failed',
             ], $status);
         }
     }
@@ -1463,14 +1468,13 @@ class ExternalApiController extends Controller
     {
         $message = $exception->getMessage();
 
-        return str_contains($message, 'api.dewamalaya33.com')
-            || str_contains($message, 'Could not resolve host');
+        return str_contains($message, 'Could not resolve host');
     }
 
     private function formatTransferErrorMessage(Exception $exception): string
     {
         if ($this->isLegacyGatewayResolutionError($exception)) {
-            return 'Transfer service is still pointing to the old gateway api.dewamalaya33.com, which cannot be resolved. Please update EXTERNAL_API_BASE_URL to a working transfer gateway or ask the provider for the new transfer API endpoint.';
+            return 'Transfer service gateway cannot be resolved. Please update EXTERNAL_API_BASE_URL to a working transfer gateway or ask the provider for the new transfer API endpoint.';
         }
 
         return 'Transfer failed: ' . $exception->getMessage();

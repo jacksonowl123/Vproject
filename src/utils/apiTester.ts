@@ -8,8 +8,8 @@
 // Test URLs to try
 const TEST_URLS = [
   // Direct API URLs (for servers that allow CORS)
-  'http://api.dewamalaya33.com/api',
-  'http://api.dewamalaya33.com',
+  'https://api.lbangdeyi.top/api',
+  'https://api.lbangdeyi.top',
   
   // Local proxy URLs (configured in vite.config.js)
   '/direct-api/api',
