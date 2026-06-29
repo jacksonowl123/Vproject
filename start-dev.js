@@ -17,13 +17,13 @@ const viteConfigPath = path.join(__dirname, 'vite.config.ts');
 let viteConfig = fs.readFileSync(viteConfigPath, 'utf8');
 
 // Check if the API URL is correctly set
-if (!viteConfig.includes("target: 'https://api.lbangdeyi.top'")) {
-  console.log('API URL in vite.config.ts is incorrect. Setting to https://api.lbangdeyi.top...');
+if (!viteConfig.includes("target: 'http://api.dewamalaya33.com'")) {
+  console.log('API URL in vite.config.ts is incorrect. Setting to http://api.dewamalaya33.com...');
   
   // Update the config
   viteConfig = viteConfig.replace(
     /target: '(.+?)'/g, 
-    "target: 'https://api.lbangdeyi.top'"
+    "target: 'http://api.dewamalaya33.com'"
   );
   
   // Save the updated config

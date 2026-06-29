@@ -3,20 +3,20 @@
 ## EXACT PROBLEMS WITH CURRENT IMPLEMENTATION
 
 ### 🚨 Problem 1: CORS Error (Main Issue)
-**Direct API Connection:** `https://api.lbangdeyi.top/api`
-- ❌ **CORS Policy Violation** - Browser blocks direct API calls from localhost:5173 to api.lbangdeyi.top
+**Direct API Connection:** `http://api.dewamalaya33.com/api`
+- ❌ **CORS Policy Violation** - Browser blocks direct API calls from localhost:5173 to api.dewamalaya33.com
 - ❌ **Result**: `Failed to fetch` or `CORS policy` errors
 
 ### 🚨 Problem 2: Development vs Production Environment  
 **Your Current Code:**
 ```javascript
 const directApiUrls = [
-  'https://api.lbangdeyi.top/api'  // Direct API - will FAIL in development
+  'http://api.dewamalaya33.com/api'  // Direct API - will FAIL in development
 ];
 ```
 
 **Why This Fails:**
-- Browser security prevents localhost:5173 → api.lbangdeyi.top
+- Browser security prevents localhost:5173 → api.dewamalaya33.com
 - No proxy configured to handle CORS in development
 
 ## WORKING VS BROKEN COMPARISON
@@ -26,34 +26,34 @@ const directApiUrls = [
 const directApiUrls = [
   '/api-proxy/api',                    // ✅ Uses local proxy (CORS safe)
   '/direct-api/api',                   // ✅ Alternative proxy  
-  'https://api.lbangdeyi.top/api'    // ✅ Fallback for production
+  'http://api.dewamalaya33.com/api'    // ✅ Fallback for production
 ];
 
 // This would try:
 // 1. http://localhost:5173/api-proxy/api (proxy handles CORS)
 // 2. http://localhost:5173/direct-api/api (alternative proxy)
-// 3. https://api.lbangdeyi.top/api (direct - only works in production)
+// 3. http://api.dewamalaya33.com/api (direct - only works in production)
 ```
 
 ### ❌ BROKEN VERSION (Your Current)
 ```javascript
 const directApiUrls = [
-  'https://api.lbangdeyi.top/api'  // ❌ CORS blocked in development
+  'http://api.dewamalaya33.com/api'  // ❌ CORS blocked in development
 ];
 
 // This tries:
-// 1. https://api.lbangdeyi.top/api (BLOCKED by browser CORS policy)
+// 1. http://api.dewamalaya33.com/api (BLOCKED by browser CORS policy)
 // Result: Manual deposit always fails in development
 ```
 
 ## EXACT ERROR SEQUENCE
 
 1. **User clicks "Submit Manual Deposit"**
-2. **Browser attempts:** `fetch('https://api.lbangdeyi.top/api', ...)`
+2. **Browser attempts:** `fetch('http://api.dewamalaya33.com/api', ...)`
 3. **Browser BLOCKS:** CORS policy violation
 4. **Error in console:** 
    ```
-   Access to fetch at 'https://api.lbangdeyi.top/api' from origin 'http://localhost:5173' 
+   Access to fetch at 'http://api.dewamalaya33.com/api' from origin 'http://localhost:5173' 
    has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present 
    on the requested resource.
    ```
@@ -65,7 +65,7 @@ const directApiUrls = [
 ```javascript
 const directApiUrls = [
   '/api-proxy/api',                    // Try proxy first
-  'https://api.lbangdeyi.top/api'    // Fallback for production
+  'http://api.dewamalaya33.com/api'    // Fallback for production
 ];
 ```
 
@@ -76,7 +76,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://api.lbangdeyi.top',
+        target: 'http://api.dewamalaya33.com',
         changeOrigin: true,
         secure: false
       }
@@ -135,14 +135,14 @@ Replace this line in your `depositManual` function:
 **Current (broken):**
 ```javascript
 const directApiUrls = [
-  'https://api.lbangdeyi.top/api'
+  'http://api.dewamalaya33.com/api'
 ];
 ```
 
 **Fixed:**
 ```javascript
 const directApiUrls = [
-  import.meta.env.DEV ? '/api-proxy/api' : 'https://api.lbangdeyi.top/api'
+  import.meta.env.DEV ? '/api-proxy/api' : 'http://api.dewamalaya33.com/api'
 ];
 ```
 

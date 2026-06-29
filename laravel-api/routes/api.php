@@ -39,7 +39,7 @@ Route::get('/test', function () {
 // External API Info
 Route::get('/proxy/external-api-info', function () {
     return response()->json([
-        'external_api_url' => env('EXTERNAL_API_BASE_URL', 'https://api.lbangdeyi.top/api'),
+        'external_api_url' => env('EXTERNAL_API_BASE_URL', 'http://api.dewamalaya33.com/api'),
         'bearer_token_set' => !empty(env('EXTERNAL_API_BEARER_TOKEN')),
         'status' => 'Laravel API proxy is running'
     ]);

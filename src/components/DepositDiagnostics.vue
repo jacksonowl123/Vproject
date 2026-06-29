@@ -133,10 +133,10 @@ export default defineComponent({
         
         // Try multiple API URLs in sequence
         const apiUrls = [
-          import.meta.env.DEV ? '/api-proxy/api' : 'https://api.lbangdeyi.top/api',
-          import.meta.env.DEV ? '/direct-api/api' : 'https://api.lbangdeyi.top/api',
-          import.meta.env.DEV ? '/api-proxy' : 'https://api.lbangdeyi.top',
-          import.meta.env.DEV ? '/direct-api' : 'https://api.lbangdeyi.top'
+          import.meta.env.DEV ? '/api-proxy/api' : 'http://api.dewamalaya33.com/api',
+          import.meta.env.DEV ? '/direct-api/api' : 'http://api.dewamalaya33.com/api',
+          import.meta.env.DEV ? '/api-proxy' : 'http://api.dewamalaya33.com',
+          import.meta.env.DEV ? '/direct-api' : 'http://api.dewamalaya33.com'
         ];
         
         // Get token from localStorage or use the default bearer token
