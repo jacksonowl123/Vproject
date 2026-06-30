@@ -1105,8 +1105,7 @@ class ExternalApiController extends Controller
                 ]);
                 $payload = [
                     'platformid' => (int) $request->platformid,
-                    'view' => $request->view,
-                    'user_jwt' => $token
+                    'view' => $request->view
                 ];
                 $upstream = Http::timeout($this->timeout)
                     ->withHeaders($headers)
