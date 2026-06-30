@@ -1082,8 +1082,6 @@ class ExternalApiController extends Controller
             $base = rtrim($this->registerBaseUrl, '/');
             $candidatePaths = [
                 '/api/platform/launch',
-                '/api/platforms/launch',
-                '/platform/launch',
             ];
 
             $headers = [
