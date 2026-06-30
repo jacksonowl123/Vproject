@@ -252,7 +252,9 @@ class ExternalApiController extends Controller
             $email = (string) ($response['user_email'] ?? $response['email'] ?? '');
             $people = (int) ($response['user_people'] ?? $response['people'] ?? 0);
             $status = (int) ($response['user_status'] ?? $response['status'] ?? 1);
-            $credits = (float) ($response['credits'] ?? 0);
+            $creditsGame = (float) ($response['credits_game'] ?? 0);
+            $creditsWallet = (float) ($response['credits_wallet'] ?? 0);
+            $credits = $creditsGame + $creditsWallet;
             $bonus = (float) ($response['bonus'] ?? 0);
 
             $member = [
@@ -272,11 +274,15 @@ class ExternalApiController extends Controller
                 'wallet' => [
                     'iid' => $memberId,
                     'value' => $credits,
+                    'game' => $creditsGame,
+                    'wallet' => $creditsWallet,
                     'bonus' => $bonus,
                     'account' => null,
                     'accountType' => 'wallet'
                 ],
                 'credits' => $credits,
+                'credits_game' => $creditsGame,
+                'credits_wallet' => $creditsWallet,
                 'bonus' => $bonus,
                 'raw' => $response,
             ];

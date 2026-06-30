@@ -386,10 +386,13 @@ export const laravelApi = {
 
       if (result?.success && result?.data) {
         const memberData = result.data as MemberDetails;
-        const credits = Number((memberData as any).credits ?? (memberData as any).wallet?.value ?? 0);
+        const creditsGame = Number((memberData as any).credits_game ?? (memberData as any).raw?.credits_game ?? 0);
+        const creditsWallet = Number((memberData as any).credits_wallet ?? (memberData as any).raw?.credits_wallet ?? 0);
+        const combinedCredits = creditsGame + creditsWallet;
+        const credits = combinedCredits || Number((memberData as any).credits ?? (memberData as any).wallet?.value ?? 0);
         const bonus = Number((memberData as any).bonus ?? (memberData as any).wallet?.bonus ?? 0);
 
-        if ((memberData as any).wallet || (memberData as any).credits !== undefined) {
+        if ((memberData as any).wallet || (memberData as any).credits !== undefined || (memberData as any).credits_game !== undefined || (memberData as any).credits_wallet !== undefined) {
           (memberData as any).account = {
             cash: { currency: 'MYR', amount: credits.toFixed(2) },
             chips: { currency: 'MYR', amount: '0.00' },
@@ -738,7 +741,10 @@ export const laravelApi = {
       if (isPlatformTransferFailure) {
         try {
           const memberDetails = await laravelApi.getMemberDetails();
-          const credits = Number(
+          const creditsGame = Number((memberDetails as any)?.credits_game ?? 0);
+          const creditsWallet = Number((memberDetails as any)?.credits_wallet ?? 0);
+          const combinedCredits = creditsGame + creditsWallet;
+          const credits = combinedCredits || Number(
             (memberDetails as any)?.credits ??
             (memberDetails as any)?.wallet?.value ??
             (memberDetails as any)?.account?.cash?.amount ??
