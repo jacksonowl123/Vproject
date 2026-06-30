@@ -732,38 +732,6 @@ export const laravelApi = {
       
       // Handle specific external API errors
       const errorMessage = error.response?.data?.message;
-      const errorType = error.response?.data?.error_type;
-      const isPlatformTransferFailure =
-        errorType === 'platform_transfer_failed' ||
-        (typeof errorMessage === 'string' && errorMessage.includes('Failed to transfer credits to platform')) ||
-        (typeof errorMessage === 'string' && errorMessage.includes('could not transfer wallet credits to platform'));
-
-      if (isPlatformTransferFailure) {
-        try {
-          const memberDetails = await laravelApi.getMemberDetails();
-          const creditsGame = Number((memberDetails as any)?.credits_game ?? 0);
-          const creditsWallet = Number((memberDetails as any)?.credits_wallet ?? 0);
-          const combinedCredits = creditsGame + creditsWallet;
-          const credits = combinedCredits || Number(
-            (memberDetails as any)?.credits ??
-            (memberDetails as any)?.wallet?.value ??
-            (memberDetails as any)?.account?.cash?.amount ??
-            0
-          );
-
-          if (!Number.isFinite(credits) || credits <= 0) {
-            throw new Error('Your wallet balance is MYR 0.00. Please refresh your wallet balance or deposit before launching this game.');
-          }
-
-          throw new Error(`Your wallet balance is MYR ${credits.toFixed(2)}, but the game provider could not receive the transfer. Please try again, or transfer credits manually from Wallet.`);
-        } catch (balanceError: any) {
-          if (balanceError?.message) {
-            throw balanceError;
-          }
-        }
-
-        throw new Error('The game provider could not receive your wallet transfer. Please refresh your balance and try again, or transfer credits manually from Wallet.');
-      }
       
       if (errorMessage && errorMessage.includes('Method must be a non-empty string')) {
         throw new Error('🎮 Game service temporarily unavailable. The gaming platform is experiencing technical difficulties. Please try again later or contact support.');
