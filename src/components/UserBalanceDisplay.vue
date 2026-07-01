@@ -1,5 +1,8 @@
 <template>
   <div v-if="authState.isLoggedIn" class="bg-gray-200 rounded-full p-4 flex items-center balance-update-trigger" ref="balanceContainer">
+    <span class="mr-4 font-semibold text-gray-700">
+      <i class="fas fa-user-circle mr-1 text-blue-500"></i>{{ displayUsername }}
+    </span>
     <span class="mr-4">
       {{ balance.cash.currency }} <span v-if="isBalanceHidden">******</span><span v-else>{{ balance.cash.amount }}</span> Cash
     </span>
@@ -14,7 +17,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, onUnmounted, PropType, watch } from 'vue';
+import { computed, defineComponent, ref, onMounted, onUnmounted, PropType, watch } from 'vue';
 import { laravelApi as api } from '@/services/laravelApi';
 import { useRouter } from 'vue-router';
 import { authState } from '@/store/auth';
@@ -48,6 +51,9 @@ export default defineComponent({
     const balance = ref<BalanceData>(props.initialBalance);
     const balanceContainer = ref<HTMLElement | null>(null);
     const isRefreshing = ref(false);
+    const displayUsername = computed(() => {
+      return authState.memberDetails?.usr || authState.memberDetails?.user_usr || authState.username || localStorage.getItem('username') || 'Member';
+    });
 
     const toggleVisibility = () => {
       isBalanceHidden.value = !isBalanceHidden.value;
@@ -146,6 +152,7 @@ export default defineComponent({
       onRecharge,
       fetchBalance,
       balanceContainer,
+      displayUsername,
       authState
     };
   }

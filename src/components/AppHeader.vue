@@ -43,6 +43,10 @@
       </template>
       <!-- Logout button - Show when logged in -->
       <template v-else>
+        <div class="hidden sm:flex items-center rounded-full bg-gray-100 px-3 py-1.5 text-sm font-semibold text-gray-700">
+          <i class="fas fa-user-circle mr-2 text-blue-500"></i>
+          {{ displayUsername }}
+        </div>
         <button 
           @click="handleLogout" 
           class="px-3 py-1.5 md:px-6 md:py-2 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 text-sm md:text-base"
@@ -56,7 +60,7 @@
 
 <script>
 import { dummyImages } from '@/assets'
-import { watch } from 'vue'
+import { computed, watch } from 'vue'
 import { authState, setLoginState } from '@/store/auth'
 import { useRouter } from 'vue-router'
 
@@ -70,6 +74,10 @@ export default {
       console.log('Header - isLoggedIn changed:', newValue);
     });
 
+    const displayUsername = computed(() => {
+      return authState.memberDetails?.usr || authState.memberDetails?.user_usr || authState.username || localStorage.getItem('username') || 'Member';
+    });
+
     const handleLogout = () => {
       setLoginState(false, '');
       router.push('/login');
@@ -81,6 +89,7 @@ export default {
 
     return { 
       authState,
+      displayUsername,
       dummyImages,
       handleLogout,
       toggleLanguage
